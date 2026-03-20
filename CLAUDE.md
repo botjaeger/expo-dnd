@@ -122,13 +122,20 @@ Peer dependencies (must be installed by consumer):
 
 ### CI Pipeline
 
-On every push to `main` (via squash merge):
-1. **Type check** — `npm run typecheck`
-2. **Build** — `npm run build` (CJS + ESM + DTS)
-3. **Version bump** — auto-increments `package.json` based on commit prefix
-4. **Publish** — auto-publishes to npm with git tag (e.g. `v0.2.0`)
+On every push/PR to `main`:
+- **CI** (`publish.yml`) — type check + build
 
-Non-publishing prefixes (`docs:`, `ci:`, `chore:`, etc.) still run CI but skip the publish step.
+### Release Pipeline (release-please)
+
+On every push to `main`:
+1. **release-please** scans conventional commits since last release
+2. Opens/updates a **Release PR** with version bump + `CHANGELOG.md`
+3. When you merge the Release PR:
+   - Creates a git tag (e.g. `v0.2.0`)
+   - Creates a GitHub Release with changelog
+   - Auto-publishes to npm
+
+Non-publishing prefixes (`docs:`, `ci:`, `chore:`, etc.) don't trigger a Release PR.
 
 ## Testing
 
