@@ -1,10 +1,17 @@
 # expo-dnd
 
+[![npm version](https://badge.fury.io/js/%40botjaeger%2Fexpo-dnd.svg)](https://www.npmjs.com/package/@botjaeger/expo-dnd)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue.svg)](https://www.typescriptlang.org/)
+[![React Native](https://img.shields.io/badge/React%20Native-0.72+-green.svg)](https://reactnative.dev/)
+
 Cross-platform drag and drop for React Native. iOS, Android, and Web.
 
 Built on [Reanimated](https://docs.swmansion.com/react-native-reanimated/) (3+ and 4+) and [Gesture Handler](https://docs.swmansion.com/react-native-gesture-handler/) (2+). All animations run at 60 fps on the UI thread.
 
-**[Documentation & Demos](https://botjaeger.github.io/expo-dnd/)** · **[Try on Device (Expo Go)](https://expo.dev/accounts/jarngotostos/projects/expo-dnd-example)**
+[![Documentation](https://img.shields.io/badge/📖%20Documentation-4f46e5?style=for-the-badge&logo=gitbook&logoColor=white&labelColor=1e293b&color=3b82f6)](https://botjaeger.github.io/expo-dnd/)
+[![Live Demo](https://img.shields.io/badge/📱%20Try%20on%20Device-fcba03?style=for-the-badge&logo=expo&logoColor=white&labelColor=1e293b)](https://expo.dev/accounts/jarngotostos/projects/expo-dnd-example)
+[![NPM Package](https://img.shields.io/badge/📦%20View%20on%20NPM-cb3837?style=for-the-badge&logo=npm&logoColor=white&labelColor=1e293b)](https://www.npmjs.com/package/@botjaeger/expo-dnd)
 
 ## Install
 
