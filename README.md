@@ -228,6 +228,18 @@ Pass as a string or custom config:
 | `DragEndEvent` | `{ active: { id, data? }, over: { id, data? } \| null }` |
 | `DropEvent<T>` | `{ item: T, fromListId, fromIndex, toListId, toIndex }` |
 
+## Example App
+
+Run the demo app on your device with Expo Go:
+
+```bash
+cd example
+npm install
+npx expo start
+```
+
+Scan the QR code with Expo Go (iOS/Android) to try all 5 demos on your phone.
+
 ## Platform Notes
 
 - **iOS/Android**: Native gesture handling via Reanimated worklets
