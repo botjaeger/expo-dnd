@@ -1,10 +1,47 @@
-# expo-dnd
+<h1 align="center">expo-dnd</h1>
 
-Cross-platform drag and drop for React Native. iOS, Android, and Web.
+<p align="center">
+  <i>Cross-platform drag and drop for React Native — iOS, Android, and Web</i>
+</p>
 
-Built on [Reanimated](https://docs.swmansion.com/react-native-reanimated/) (3+ and 4+) and [Gesture Handler](https://docs.swmansion.com/react-native-gesture-handler/) (2+). All animations run at 60 fps on the UI thread.
+<p align="center">
+  <i>UI-thread animations, sortable lists, cross-list transfers, and collision detection out of the box</i>
+</p>
 
-**[Documentation & Demos](https://botjaeger.github.io/expo-dnd/)** · **[Try on Device (Expo Go)](https://expo.dev/accounts/jarngotostos/projects/expo-dnd-example)**
+<p align="center">
+  <a href="https://www.npmjs.com/package/@botjaeger/expo-dnd"><img src="https://badge.fury.io/js/%40botjaeger%2Fexpo-dnd.svg" alt="npm version" /></a>
+  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT" /></a>
+  <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-Ready-blue.svg" alt="TypeScript" /></a>
+  <a href="https://reactnative.dev/"><img src="https://img.shields.io/badge/React%20Native-0.72+-green.svg" alt="React Native" /></a>
+</p>
+
+<p align="center">
+  <a href="https://botjaeger.github.io/expo-dnd/"><img src="https://img.shields.io/badge/📖%20Documentation-4f46e5?style=for-the-badge&logo=gitbook&logoColor=white&labelColor=1e293b&color=3b82f6" alt="Documentation" /></a>
+  <a href="https://www.npmjs.com/package/@botjaeger/expo-dnd"><img src="https://img.shields.io/badge/📦%20View%20on%20NPM-cb3837?style=for-the-badge&logo=npm&logoColor=white&labelColor=1e293b" alt="NPM Package" /></a>
+</p>
+
+---
+
+## Why expo-dnd?
+
+Most React Native drag-and-drop libraries are either unmaintained, web-first ports that fight the platform, or missing the features you actually need. expo-dnd is different — it's **built from scratch for React Native** with a two-thread architecture: gestures and animations run entirely on the **UI thread** via Reanimated worklets, while React handles state on the JS thread. No bridge bottleneck, no dropped frames.
+
+The API covers the full spectrum — from dropping items onto zones to reordering sortable lists to transferring items across multiple lists — with **one consistent pattern**. Add `itemSize` for fixed layouts, or skip it and let the library auto-measure. It just works.
+
+## Features
+
+- **60fps UI-Thread Animations** – All gesture handling and animations run on the UI thread via Reanimated worklets. No JS bridge round-trips during drag.
+- **Fabric & New Architecture** – Tested on Fabric with iOS and Android. In-place sortable animations avoid the Fabric gesture cancellation issue.
+- **Works with Expo** – Compatible with Expo managed workflow. Requires peer dependencies (Reanimated + Gesture Handler) installed separately.
+- **Auto-Measuring Sortable Lists** – `SortableList` measures item heights automatically. Variable heights work without configuration.
+- **Cross-List Transfers** – `DraggableListGroup` + `DraggableList` enables drag between multiple lists with insertion indicators.
+- **Collision Detection** – Center-point check against droppables, with intersection ratio fallback (10% threshold). Smallest-area preference for overlapping zones.
+- **Auto-Scroll** – Edge-triggered scroll in scroll-mode lists. Gated by item boundary crossing to prevent false triggers.
+- **Drag Effects** – Scale presets (`pickup`, `scaleUp`, `scaleDown`, `bounce`) with spring physics, or pass a custom `{ scale, spring }` config.
+- **Drag Handles** – `<DragHandle>` restricts drag initiation to a specific child element.
+- **Custom Hooks** – `useDraggable`, `useDroppable`, `useDndContext` for building custom drag interactions from scratch.
+- **TypeScript** – Full type definitions for all components, hooks, events, and configs.
+- **Cross-Platform** – iOS, Android, and Web from one codebase. Web uses `getBoundingClientRect()` for measurement and left-click-only activation.
 
 ## Install
 
@@ -278,7 +315,11 @@ Pass as a string or custom config:
 
 ## Example App
 
-**[Try it now in Expo Go](https://expo.dev/accounts/jarngotostos/projects/expo-dnd-example)** — scan the QR code with Expo Go (iOS/Android) to try all 5 demos on your phone.
+Scan with [Expo Go](https://expo.dev/go) to try all 5 demos on your phone:
+
+<a href="https://expo.dev/accounts/jarngotostos/projects/expo-dnd-example">
+  <img src="https://qr.expo.dev/eas-update?projectId=cd6c8cd2-7c32-439a-a2f9-06e785c221d0&runtimeVersion=1.0.0&channel=preview&appScheme=exp" width="160" alt="Expo Go QR Code" />
+</a>
 
 Or run locally:
 
