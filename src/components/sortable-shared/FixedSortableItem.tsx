@@ -77,25 +77,13 @@ function FixedSortableItemInner<T>({
     [originalIndex]
   );
 
-  // Long press gesture for visual feedback during press (before drag activates)
-  const longPressGesture = Gesture.LongPress()
-    .minDuration(LONG_PRESS_DURATION)
+  const panGesture = Gesture.Pan()
+    .activateAfterLongPress(LONG_PRESS_DURATION)
     .onBegin(() => {
       'worklet';
       isPressing.value = true;
       liftedAnimatedScale.value = withTiming(ACTIVE_SCALE, { duration: 100 });
     })
-    .onFinalize(() => {
-      'worklet';
-      // Only reset if drag didn't activate
-      if (!isActive.value) {
-        isPressing.value = false;
-        liftedAnimatedScale.value = withTiming(1, { duration: 100 });
-      }
-    });
-
-  const panGesture = Gesture.Pan()
-    .activateAfterLongPress(LONG_PRESS_DURATION)
     .onStart((event) => {
       'worklet';
       const currentPos = positions.value[itemId];
@@ -106,20 +94,16 @@ function FixedSortableItemInner<T>({
       startPosition.value = currentPos;
       dragEndFired.value = false;
 
-      // Keep scale at ACTIVE_SCALE (already set by long press)
       liftedAnimatedScale.value = withTiming(ACTIVE_SCALE, SCALE_CONFIG);
       liftedIsActive.value = true;
 
-      // Save initial offset for calculating movement
       const currentOffset = currentPrefixSum.value[currentPos] - originalPrefixSum.value[originalIndex];
       initialItemOffset.value = currentOffset;
       animatedOffset.value = currentOffset;
 
-      // Write the start pixel position to the lifted shared value for the overlay
       const startPixel = originalPrefixSum.value[originalIndex] + currentOffset;
       liftedStartPixelPosition.value = startPixel;
 
-      // Reset gesture translation
       gestureTranslation.value = 0;
       liftedGestureTranslation.value = 0;
 
@@ -219,55 +203,32 @@ function FixedSortableItemInner<T>({
           liftedIsActive.value = false;
           runOnJS(onDeactivate)();
         });
+      } else if (!success) {
+        // Touch ended before drag activated — reset press feedback
+        isPressing.value = false;
+        liftedAnimatedScale.value = withTiming(1, { duration: 100 });
       }
     });
 
-  // Compose long press and pan gestures to run simultaneously
-  const gesture = Gesture.Simultaneous(longPressGesture, panGesture);
+  const gesture = panGesture;
 
   const animatedStyle = useAnimatedStyle(() => {
     const active = isActive.value;
     const pressing = isPressing.value;
     const offset = animatedOffset.value;
 
-    // This item is being dragged — hide it (overlay renders the visual clone)
-    if (active) {
-      return {
-        transform: isHorizontal
-          ? [{ translateX: offset }]
-          : [{ translateY: offset }],
-        opacity: activeDragStyle?.opacity ?? 0,
-        zIndex: 0,
-      };
-    }
+    const scale = active ? 1 : pressing ? liftedAnimatedScale.value : 1;
 
-    // Item is being pressed (before drag activates) — scale down with shadow
-    if (pressing) {
-      const scale = liftedAnimatedScale.value;
-      return {
-        transform: isHorizontal
-          ? [{ translateX: offset }, { scale: scale }]
-          : [{ translateY: offset }, { scale: scale }],
-        opacity: 1,
-        zIndex: 99999,
-        shadowColor: '#000',
-        shadowOpacity: 0.35,
-        shadowRadius: 20,
-        shadowOffset: { width: 0, height: 12 },
-        elevation: 24,
-      };
-    }
-
-    // Idle state — other items use animatedOffset (animated via useAnimatedReaction)
     return {
       transform: isHorizontal
-        ? [{ translateX: offset }, { scale: 1 }]
-        : [{ translateY: offset }, { scale: 1 }],
-      opacity: 1,
-      zIndex: 0,
-      shadowOpacity: 0,
-      shadowRadius: 0,
-      elevation: 0,
+        ? [{ translateX: offset }, { scale }]
+        : [{ translateY: offset }, { scale }],
+      opacity: active ? (activeDragStyle?.opacity ?? 0) : 1,
+      shadowColor: '#000',
+      shadowOpacity: pressing ? 0.35 : 0,
+      shadowRadius: pressing ? 20 : 0,
+      shadowOffset: { width: 0, height: pressing ? 12 : 0 },
+      elevation: pressing ? 24 : 0,
     };
   });
 

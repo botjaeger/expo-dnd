@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { View } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedRef,
@@ -46,19 +46,11 @@ export function PortalProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <PortalContext.Provider value={contextValue}>
-      <View style={{ flex: 1 }} collapsable={false}>
+      <View style={portalStyles.root} collapsable={false}>
         {children}
         <Animated.View
           ref={outletRef}
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            pointerEvents: 'none',
-            zIndex: 99999,
-          }}
+          style={portalStyles.outlet}
           collapsable={false}
           onLayout={measureOutlet}
           pointerEvents="none"
@@ -71,3 +63,15 @@ export function PortalProvider({ children }: { children: React.ReactNode }) {
     </PortalContext.Provider>
   );
 }
+
+const portalStyles = StyleSheet.create({
+  root: { flex: 1 },
+  outlet: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 99999,
+  },
+});

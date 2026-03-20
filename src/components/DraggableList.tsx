@@ -1003,7 +1003,6 @@ export function DraggableList<T>({
 
 const styles = StyleSheet.create({
   listContainer: {
-    flex: 1,
     minHeight: 56,
   },
   scrollContainer: {
