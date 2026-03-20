@@ -533,7 +533,7 @@ export default function App() {
       <SafeAreaView style={s.safe}>
         <View style={s.header}>
           <Text style={s.title}>expo-dnd</Text>
-          <Text style={s.subtitle}>examples</Text>
+          <Text style={s.subtitle}>demo</Text>
         </View>
 
         <ScrollView
