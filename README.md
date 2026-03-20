@@ -4,7 +4,7 @@ Cross-platform drag and drop for React Native. iOS, Android, and Web.
 
 Built on [Reanimated](https://docs.swmansion.com/react-native-reanimated/) (3+ and 4+) and [Gesture Handler](https://docs.swmansion.com/react-native-gesture-handler/) (2+). All animations run at 60 fps on the UI thread.
 
-**[Documentation & Demos](https://botjaeger.github.io/expo-dnd/)** · **[Try on Device (Expo Go)](https://expo.dev/preview/update?message=Demo%20app%20%E2%80%94%20drag%20%26%20drop%20examples&updateRuntimeVersion=1.0.0&createdAt=2026-03-20&slug=expo-dnd-example&projectId=cd6c8cd2-7c32-439a-a2f9-06e785c221d0&group=24d78f48-62a8-42fb-9b2a-47c855ddab8b)**
+**[Documentation & Demos](https://botjaeger.github.io/expo-dnd/)** · **[Try on Device (Expo Go)](https://expo.dev/accounts/jarngotostos/projects/expo-dnd-example)**
 
 ## Install
 
@@ -278,7 +278,7 @@ Pass as a string or custom config:
 
 ## Example App
 
-**[Try it now in Expo Go](https://expo.dev/preview/update?message=Demo%20app%20%E2%80%94%20drag%20%26%20drop%20examples&updateRuntimeVersion=1.0.0&createdAt=2026-03-20&slug=expo-dnd-example&projectId=cd6c8cd2-7c32-439a-a2f9-06e785c221d0&group=24d78f48-62a8-42fb-9b2a-47c855ddab8b)** — scan the QR code with Expo Go (iOS/Android) to try all 5 demos on your phone.
+**[Try it now in Expo Go](https://expo.dev/accounts/jarngotostos/projects/expo-dnd-example)** — scan the QR code with Expo Go (iOS/Android) to try all 5 demos on your phone.
 
 Or run locally:
 
