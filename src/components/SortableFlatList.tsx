@@ -874,7 +874,7 @@ function SortableFlatListContent<T>({
 }
 
 interface SortableFlatListScrollModeContainerProps<T> {
-  containerRef: React.RefObject<View>;
+  containerRef: React.RefObject<View | null>;
   style: SortableFlatListProps<T>['style'];
   isHorizontal: boolean;
   containerSize: number;
@@ -917,7 +917,7 @@ function SortableFlatListScrollModeContainer<T>({
 }
 
 interface SortableFlatListScrollModeRendererProps<T> {
-  containerRef: React.RefObject<View>;
+  containerRef: React.RefObject<View | null>;
   style: SortableFlatListProps<T>['style'];
   isHorizontal: boolean;
   containerSize: number;

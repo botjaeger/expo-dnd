@@ -7,7 +7,7 @@ import {
   useSharedValue,
   withSpring,
   type AnimatedRef,
-  type AnimatedStyleProp,
+  type AnimatedStyle,
   type SharedValue,
 } from 'react-native-reanimated';
 import type { ViewStyle } from 'react-native';
@@ -30,7 +30,7 @@ export interface UseDroppableReturn {
   /** Whether a draggable is currently over this droppable */
   isOver: SharedValue<boolean>;
   /** Animated style with visual feedback for hover state */
-  activeStyle: AnimatedStyleProp<ViewStyle>;
+  activeStyle: AnimatedStyle<ViewStyle>;
   /** Handler for onLayout event */
   onLayout: ReturnType<typeof useLayoutMeasurement>['handleLayout'];
 }

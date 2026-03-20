@@ -6,7 +6,7 @@ import {
   runOnJS,
   measure,
   type AnimatedRef,
-  type AnimatedStyleProp,
+  type AnimatedStyle,
   type SharedValue,
 } from 'react-native-reanimated';
 import type { ViewStyle } from 'react-native';
@@ -35,7 +35,7 @@ export interface UseDraggableReturn {
   /** Whether this item is currently being dragged */
   isDragging: SharedValue<boolean>;
   /** Animated style to apply for drag translation and visual feedback */
-  animatedStyle: AnimatedStyleProp<ViewStyle>;
+  animatedStyle: AnimatedStyle<ViewStyle>;
   /** Handler for onLayout event */
   onLayout: ReturnType<typeof useLayoutMeasurement>['handleLayout'];
 }
