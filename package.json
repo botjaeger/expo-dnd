@@ -1,0 +1,67 @@
+{
+  "name": "expo-dnd",
+  "version": "0.1.0",
+  "description": "Cross-platform drag and drop for Expo (iOS, Android, Web)",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts --clean",
+    "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+    "prepublishOnly": "npm run build",
+    "typecheck": "tsc --noEmit",
+    "docs": "npm run build && cd docs && npx expo start --web",
+    "docs:start": "cd docs && npx expo start"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-native": ">=0.72.0",
+    "react-native-gesture-handler": ">=2.10.0",
+    "react-native-reanimated": ">=3.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "~19.2.2",
+    "react": "19.2.0",
+    "react-native": "0.83.2",
+    "react-native-gesture-handler": "~2.25.0",
+    "react-native-reanimated": "~3.18.0",
+    "tsup": "^8.5.1",
+    "typescript": "~5.9.2"
+  },
+  "keywords": [
+    "react-native",
+    "expo",
+    "drag-and-drop",
+    "dnd",
+    "draggable",
+    "droppable",
+    "reanimated",
+    "gesture-handler"
+  ],
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/botjaeger/expo-dnd/issues"
+  },
+  "homepage": "https://github.com/botjaeger/expo-dnd#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/botjaeger/expo-dnd"
+  }
+}
