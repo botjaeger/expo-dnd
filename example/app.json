@@ -4,7 +4,11 @@
     "slug": "expo-dnd-example",
     "version": "1.0.0",
     "sdkVersion": "53.0.0",
-    "platforms": ["ios", "android", "web"],
+    "platforms": [
+      "ios",
+      "android",
+      "web"
+    ],
     "icon": "./assets/icon.png",
     "splash": {
       "image": "./assets/splash-icon.png",
@@ -16,6 +20,19 @@
         "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#0a0a0a"
       }
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "cd6c8cd2-7c32-439a-a2f9-06e785c221d0"
+      }
+    },
+    "owner": "jarngotostos",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/cd6c8cd2-7c32-439a-a2f9-06e785c221d0"
+    },
+    "ios": {}
   }
 }
