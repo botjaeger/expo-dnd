@@ -35,6 +35,7 @@ jobs:
         run: cd example && npm install
 
       - name: Publish update
-        run: cd example && eas update --branch preview --message "${MSG:-Manual update}" --non-interactive
+        run: cd example && eas update --branch preview --message "${MSG:-Manual update}" --platform ios,android
         env:
           MSG: ${{ github.event.head_commit.message }}
+          CI: '1'
