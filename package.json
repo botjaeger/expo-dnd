@@ -29,9 +29,9 @@
     "typecheck": "tsc --noEmit",
     "docs": "npm run build && cd docs && npx expo start --web",
     "docs:start": "cd docs && npx expo start",
-    "example": "npm run build && cd example && npx expo start",
-    "example:ios": "npm run build && cd example && npx expo start --ios",
-    "example:android": "npm run build && cd example && npx expo start --android"
+    "example": "npm run build && cd example && npm install && npx expo start",
+    "example:ios": "npm run build && cd example && npm install && npx expo start --ios",
+    "example:android": "npm run build && cd example && npm install && npx expo start --android"
   },
   "peerDependencies": {
     "react": ">=18.0.0",
