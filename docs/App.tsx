@@ -1347,9 +1347,33 @@ export default function App() {
           <View style={hs.installBlock}>
             <Text style={hs.installText}>
               <Text style={hs.installPrefix}>{'$ '}</Text>
-              npm install @botjaeger/expo-dnd
+              npx expo install @botjaeger/expo-dnd
             </Text>
           </View>
+
+          <Text style={hs.prereqLabel}>Prerequisites</Text>
+          <View style={hs.installBlock}>
+            <Text style={hs.installText}>
+              <Text style={hs.installPrefix}>{'$ '}</Text>
+              npx expo install react-native-reanimated react-native-gesture-handler react-native-worklets
+            </Text>
+          </View>
+          <Text style={hs.prereqNote}>
+            Reanimated 4+ uses{' '}
+            <Text style={hs.qrLink} onPress={() => Linking.openURL('https://docs.swmansion.com/react-native-worklets/docs')}>
+              react-native-worklets
+            </Text>
+            . Add the Babel plugin to your config:
+          </Text>
+          <View style={hs.installBlock}>
+            <Text style={hs.installText}>
+              plugins: [<Text style={hs.installHighlight}>'react-native-worklets/plugin'</Text>]
+            </Text>
+          </View>
+          <Text style={hs.prereqNote}>
+            Expo SDK 54+ includes the plugin automatically via babel-preset-expo.
+            {'\n'}Reanimated 3.x users: use <Text style={hs.installHighlight}>'react-native-reanimated/plugin'</Text> instead.
+          </Text>
 
           <View style={[hs.ctaRow, isNarrow && hs.ctaRowNarrow]}>
             <CtaButton primary label="Get Started" onPress={() => scrollTo(positionsRef.current.examples ?? 0)} />
@@ -1894,6 +1918,24 @@ const hs = StyleSheet.create({
   },
   installText: { fontFamily: 'monospace', fontSize: 14, color: C.text },
   installPrefix: { color: C.dim },
+  installHighlight: { color: C.accent },
+  prereqLabel: {
+    fontFamily: 'monospace',
+    fontSize: 11,
+    fontWeight: '600',
+    color: C.dim,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: 10,
+  },
+  prereqNote: {
+    fontFamily: 'monospace',
+    fontSize: 12,
+    color: C.muted,
+    lineHeight: 20,
+    marginBottom: 16,
+    maxWidth: 520,
+  },
   ctaRow: { flexDirection: 'row', gap: 12, marginBottom: 24 },
   ctaRowNarrow: { flexDirection: 'column' },
   qrBlock: {

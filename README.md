@@ -7,13 +7,13 @@ Built on [Reanimated 3](https://docs.swmansion.com/react-native-reanimated/) and
 ## Install
 
 ```bash
-npm install @botjaeger/expo-dnd
+npx expo install @botjaeger/expo-dnd
 ```
 
 **Peer dependencies** (must be installed separately):
 
 ```bash
-npx expo install react-native-reanimated react-native-gesture-handler
+npx expo install react-native-reanimated react-native-gesture-handler react-native-worklets
 ```
 
 | Dependency | Version |
@@ -22,6 +22,19 @@ npx expo install react-native-reanimated react-native-gesture-handler
 | `react-native` | >= 0.72.0 |
 | `react-native-reanimated` | >= 3.0.0 |
 | `react-native-gesture-handler` | >= 2.10.0 |
+| `react-native-worklets` | >= 0.5.0 (Reanimated 4+) |
+
+**Babel plugin** — add to your `babel.config.js`:
+
+```js
+// Reanimated 4+ (Expo SDK 54+)
+plugins: ['react-native-worklets/plugin']
+
+// Reanimated 3.x (Expo SDK 53 and below)
+plugins: ['react-native-reanimated/plugin']
+```
+
+> Expo SDK 54+ includes the worklets plugin automatically via `babel-preset-expo`.
 
 ## Quick Start
 
