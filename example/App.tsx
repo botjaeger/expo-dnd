@@ -21,8 +21,8 @@ import {
   useDraggable,
   useDroppable,
   useDndContext,
-} from '../dist/index';
-import type { DragEndEvent, DropEvent } from '../dist/index';
+} from '../src';
+import type { DragEndEvent, DropEvent } from '../src';
 
 // ── Colors ───────────────────────────────────────────────────────────────────
 const C = {
