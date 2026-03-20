@@ -95,3 +95,12 @@ jobs:
         run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create GitHub Release
+        if: steps.bump.outputs.type != 'none'
+        run: |
+          gh release create ${{ steps.version.outputs.new_version }} \
+            --title "${{ steps.version.outputs.new_version }}" \
+            --generate-notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
