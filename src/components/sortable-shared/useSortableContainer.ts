@@ -144,13 +144,19 @@ export function useSortableContainer<T>({
   }, [isHorizontal, containerStart, containerStartCross, containerCrossAxisSize]);
 
   const handleDragStart = useCallback((itemId: string, index: number) => {
-    // Re-measure container position
-    containerRef.current?.measureInWindow((x, y, width, height) => {
-      containerStart.value = isHorizontal ? x : y;
-      containerStartCross.value = isHorizontal ? y : x;
-      containerCrossAxisSize.value = isHorizontal ? height : width;
-    });
     onDragStartProp?.(itemId, index);
+    // Re-measure container position deferred so the measureInWindow callback's
+    // shared-value writes don't land during gesture activation on Fabric/iOS.
+    // Writing to shared values from the JS thread triggers a synchronous UI-thread
+    // commit (JSI), which interrupts the gesture recognizer and causes it to
+    // cancel with success=false on New Architecture.
+    setTimeout(() => {
+      containerRef.current?.measureInWindow((x, y, width, height) => {
+        containerStart.value = isHorizontal ? x : y;
+        containerStartCross.value = isHorizontal ? y : x;
+        containerCrossAxisSize.value = isHorizontal ? height : width;
+      });
+    }, 0);
   }, [isHorizontal, containerStart, containerStartCross, containerCrossAxisSize, onDragStartProp]);
 
   const handleDragMove = useCallback((itemId: string, overIndex: number, position: number) => {

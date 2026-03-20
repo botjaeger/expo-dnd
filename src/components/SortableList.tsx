@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import Animated, {
@@ -8,71 +8,48 @@ import Animated, {
   useAnimatedRef,
   useDerivedValue,
   withTiming,
-  withSpring,
   runOnJS,
   type SharedValue,
 } from 'react-native-reanimated';
 import { objectMove, clamp } from '../utils/sortable';
-import { resolveDragEffect } from '../animations/dragEffects';
+import { resolveDragEffect, type DragEffectConfig } from '../animations/dragEffects';
 import { getIndexAtMidpoint } from '../utils/heights';
 import { DraggableItemContext } from './Draggable';
 import {
   TIMING_CONFIG,
-  SCALE_CONFIG,
   LONG_PRESS_DURATION,
   ACTIVE_SCALE,
   AUTO_SCROLL_THRESHOLD,
-  FixedSortableItem,
   useSortableContainer,
   sortableStyles,
-  SortableDragOverlay,
   SortableItemRenderer,
 } from './sortable-shared';
-import { usePortal } from '../portal/usePortal';
+
+// ============ Types ============
 
 interface SortableListProps<T> {
-  /** Unique identifier for this sortable zone */
   id?: string;
-  /** Array of items to render */
   data: T[];
-  /** Render function for each item */
   renderItem: (info: { item: T; index: number; isDragging: boolean }) => React.ReactNode;
-  /** Called when items are reordered */
   onReorder: (data: T[], event: { fromIndex: number; toIndex: number; item: T }) => void;
-  /** Extract unique key from item */
   keyExtractor: (item: T) => string;
-  /** Size of each item (height for vertical, width for horizontal).
-   *  Pass a number for uniform sizes, or a function (index) => size for variable sizes. */
   itemSize: number | ((index: number) => number);
-  /** Container size - if provided, enables scroll mode with auto-scroll */
   containerSize?: number;
-  /** Horizontal or vertical orientation (default: 'horizontal') */
   direction?: 'horizontal' | 'vertical';
-  /** Distance from edge to trigger auto-scroll (default: 80). Only used in scroll mode. */
   autoScrollThreshold?: number;
-  /** Custom style for the container */
   style?: any;
-  /** Called when drag starts */
   onDragStart?: (id: string, index: number) => void;
-  /** Called during drag with position updates */
   onDragMove?: (id: string, overIndex: number, position: number) => void;
-  /** Called when drag ends (before onReorder) */
   onDragEnd?: (id: string, fromIndex: number, toIndex: number) => void;
-  /** When true, only a DragHandle inside renderItem triggers dragging */
   handle?: boolean;
-  /** Style applied to the source item placeholder while it is being dragged.
-   *  Defaults to { opacity: 0 } (invisible). Set e.g. { opacity: 0.3 } to show a ghost. */
   activeDragStyle?: import('react-native').ViewStyle;
-  /** Render a custom insertion indicator at the current drag position.
-   *  Receives the target index. Return null to hide. */
   renderInsertIndicator?: (index: number) => React.ReactNode;
-  /** Animation effect applied to the drag overlay when picked up */
   dragEffect?: import('../animations/dragEffects').DragEffect | import('../animations/dragEffects').DragEffectConfig;
 }
 
-// ============ Scroll Mode SortableItem (with auto-scroll) ============
+// ============ SortableItem (unified for fixed + scroll) ============
 
-interface ScrollSortableItemProps<T> {
+interface SortableItemProps<T> {
   item: T;
   itemId: string;
   originalIndex: number;
@@ -80,37 +57,28 @@ interface ScrollSortableItemProps<T> {
   itemHeight: number;
   totalSize: number;
   gap: number;
-  containerSize: number;
-  autoScrollThreshold: number;
   direction: 'horizontal' | 'vertical';
   handle?: boolean;
-  activeDragStyle?: import('react-native').ViewStyle;
+  dragEffectConfig?: DragEffectConfig;
+  /** JS-computed pixel position for this item (avoids stale shared value reads) */
+  initialPixelPosition: number;
   positions: SharedValue<{ [id: string]: number }>;
-  originalPrefixSum: SharedValue<number[]>;
-  currentPrefixSum: SharedValue<number[]>;
   activeId: SharedValue<string | null>;
   isDragging: SharedValue<boolean>;
+  originalPrefixSum: SharedValue<number[]>;
+  currentPrefixSum: SharedValue<number[]>;
   scrollOffset: SharedValue<number>;
-  containerStart: SharedValue<number>;
   touchPosition: SharedValue<number>;
-  /** Dragged item content position for auto-scroll gating */
   dragContentPosition: SharedValue<number>;
   dragItemSize: SharedValue<number>;
-  /** Lifted shared values for overlay */
-  liftedGestureTranslation: SharedValue<number>;
-  liftedStartPixelPosition: SharedValue<number>;
-  liftedStartScrollOffset: SharedValue<number>;
-  liftedAnimatedScale: SharedValue<number>;
-  liftedIsActive: SharedValue<boolean>;
-  onActivate: (item: T, index: number) => void;
-  onDeactivate: () => void;
+  isScrollMode: boolean;
   renderItem: (info: { item: T; index: number; isDragging: boolean }) => React.ReactNode;
   onDragStart: (id: string, index: number) => void;
   onDragMove: (id: string, overIndex: number, position: number) => void;
   onDragEnd: (id: string, fromIndex: number, toIndex: number) => void;
 }
 
-function ScrollSortableItemInner<T>({
+function SortableItemInner<T>({
   item,
   itemId,
   originalIndex,
@@ -118,40 +86,32 @@ function ScrollSortableItemInner<T>({
   itemHeight,
   totalSize,
   gap,
-  containerSize,
-  autoScrollThreshold,
   direction,
   handle,
-  activeDragStyle,
+  dragEffectConfig,
+  initialPixelPosition,
   positions,
-  originalPrefixSum,
-  currentPrefixSum,
   activeId,
   isDragging,
+  originalPrefixSum,
+  currentPrefixSum,
   scrollOffset,
-  containerStart,
   touchPosition,
   dragContentPosition,
   dragItemSize,
-  liftedGestureTranslation,
-  liftedStartPixelPosition,
-  liftedStartScrollOffset,
-  liftedAnimatedScale,
-  liftedIsActive,
-  onActivate,
-  onDeactivate,
+  isScrollMode,
   renderItem,
   onDragStart,
   onDragMove,
   onDragEnd,
-}: ScrollSortableItemProps<T>) {
+}: SortableItemProps<T>) {
   const isActive = useSharedValue(false);
   const isPressing = useSharedValue(false);
-  const startPosition = useSharedValue(0);
-  const startScrollOffset_ = useSharedValue(0);
-  const startPixelPosition = useSharedValue(0);
-  const animatedPosition = useSharedValue(0);
+  const startPositionIndex = useSharedValue(0);
+  const startPixelPos = useSharedValue(0);
+  const startScrollOffset = useSharedValue(0);
   const gestureTranslation = useSharedValue(0);
+  const animatedPosition = useSharedValue(initialPixelPosition);
   const dragEndFired = useSharedValue(false);
   const isHorizontal = direction === 'horizontal';
 
@@ -159,34 +119,42 @@ function ScrollSortableItemInner<T>({
     return positions.value[itemId] ?? originalIndex;
   });
 
+  // Reset position when data changes externally (e.g. after reorder).
+  // Uses JS-computed pixel position (not shared value) to avoid stale reads —
+  // parent useEffect that updates shared values runs AFTER children useEffects.
   useEffect(() => {
-    animatedPosition.value = originalPrefixSum.value[originalIndex] ?? 0;
-  }, [originalIndex]);
+    animatedPosition.value = initialPixelPosition;
+  }, [initialPixelPosition]);
 
+  // Animate to new position when swapped by another item's drag.
+  // Watch the computed pixel position (not just the index) so that variable-height
+  // changes are detected even when the position index stays the same.
   useAnimatedReaction(
-    () => currentPosition.value,
-    (pos, prevPos) => {
-      if (prevPos !== null && pos !== prevPos && !isActive.value) {
-        const targetPosition = currentPrefixSum.value[pos] ?? 0;
-        animatedPosition.value = withTiming(targetPosition, TIMING_CONFIG);
+    () => {
+      const pos = positions.value[itemId] ?? originalIndex;
+      return currentPrefixSum.value[pos] ?? 0;
+    },
+    (targetPos, prevTargetPos) => {
+      if (!isActive.value && prevTargetPos !== null && targetPos !== prevTargetPos) {
+        animatedPosition.value = withTiming(targetPos, TIMING_CONFIG);
       }
     }
   );
 
-  // Check for position swaps during auto-scroll and update dragContentPosition
+  // Scroll mode: check for swaps during auto-scroll (finger stationary, scroll moving)
   useAnimatedReaction(
     () => scrollOffset.value,
     (scroll, prevScroll) => {
-      if (!isActive.value || prevScroll === null) return;
+      if (!isActive.value || prevScroll === null || !isScrollMode) return;
 
-      const scrollChange = scroll - startScrollOffset_.value;
-      const rawContentPos = startPixelPosition.value + gestureTranslation.value + scrollChange;
+      const scrollChange = scroll - startScrollOffset.value;
+      const rawContentPos = startPixelPos.value + gestureTranslation.value + scrollChange;
       const contentPos = clamp(rawContentPos, 0, totalSize - itemHeight);
 
-      // Keep auto-scroll gating in sync as scroll changes
+      // Keep auto-scroll gating in sync
       dragContentPosition.value = contentPos;
 
-      // Use unclamped position so tall items can reach edge slots
+      // Swap detection using unclamped center
       const itemCenter = rawContentPos + itemHeight / 2;
       const newIndex = getIndexAtMidpoint(currentPrefixSum.value, itemCenter, itemCount, gap);
       const currentIndex = positions.value[itemId];
@@ -195,54 +163,36 @@ function ScrollSortableItemInner<T>({
         positions.value = objectMove(positions.value, currentIndex, newIndex);
       }
     },
-    [itemCount, totalSize, itemHeight]
+    [itemCount, totalSize, itemHeight, isScrollMode]
   );
-
-  const longPressGesture = Gesture.LongPress()
-    .minDuration(LONG_PRESS_DURATION)
-    .onBegin(() => {
-      'worklet';
-      isPressing.value = true;
-      liftedAnimatedScale.value = withTiming(ACTIVE_SCALE, { duration: 100 });
-    })
-    .onFinalize(() => {
-      'worklet';
-      if (!isActive.value) {
-        isPressing.value = false;
-        liftedAnimatedScale.value = withTiming(1, { duration: 100 });
-      }
-    });
 
   const panGesture = Gesture.Pan()
     .activateAfterLongPress(LONG_PRESS_DURATION)
-    .onStart((event) => {
+    .onBegin(() => {
+      'worklet';
+      isPressing.value = true;
+    })
+    .onStart(() => {
       'worklet';
       const currentPos = positions.value[itemId];
+      const pixelPos = currentPrefixSum.value[currentPos] ?? 0;
+
       isActive.value = true;
       isPressing.value = false;
       activeId.value = itemId;
       isDragging.value = true;
-      startPosition.value = currentPos;
-      dragEndFired.value = false;
-      startScrollOffset_.value = scrollOffset.value;
-
-      const pixelPos = currentPrefixSum.value[currentPos] ?? 0;
-      startPixelPosition.value = pixelPos;
-
-      liftedAnimatedScale.value = withTiming(ACTIVE_SCALE, SCALE_CONFIG);
-      liftedStartPixelPosition.value = pixelPos;
-      liftedStartScrollOffset.value = scrollOffset.value;
-      liftedIsActive.value = true;
-
-      animatedPosition.value = pixelPos;
+      startPositionIndex.value = currentPos;
+      startPixelPos.value = pixelPos;
+      startScrollOffset.value = scrollOffset.value;
       gestureTranslation.value = 0;
-      liftedGestureTranslation.value = 0;
+      animatedPosition.value = pixelPos;
+      dragEndFired.value = false;
 
-      // Initialize drag content position for auto-scroll gating
-      dragContentPosition.value = pixelPos;
-      dragItemSize.value = itemHeight;
+      if (isScrollMode) {
+        dragContentPosition.value = pixelPos;
+        dragItemSize.value = itemHeight;
+      }
 
-      runOnJS(onActivate)(item, originalIndex);
       runOnJS(onDragStart)(itemId, currentPos);
     })
     .onUpdate((event) => {
@@ -251,54 +201,54 @@ function ScrollSortableItemInner<T>({
 
       const translation = isHorizontal ? event.translationX : event.translationY;
       gestureTranslation.value = translation;
-      liftedGestureTranslation.value = translation;
 
-      const scrollChange = scrollOffset.value - startScrollOffset_.value;
-      const rawContentPos = startPixelPosition.value + translation + scrollChange;
-      const contentPos = clamp(rawContentPos, 0, totalSize - itemHeight);
+      // Calculate content position
+      let rawContentPos = startPixelPos.value + translation;
+      if (isScrollMode) {
+        rawContentPos += scrollOffset.value - startScrollOffset.value;
+        dragContentPosition.value = clamp(rawContentPos, 0, totalSize - itemHeight);
+      }
 
-      // Update dragged item content position for auto-scroll gating
-      dragContentPosition.value = contentPos;
-
-      // Use unclamped position for swap detection so tall items can reach edge slots
+      // Swap detection using unclamped center
       const itemCenter = rawContentPos + itemHeight / 2;
       const newIndex = getIndexAtMidpoint(currentPrefixSum.value, itemCenter, itemCount, gap);
       const currentIndex = positions.value[itemId];
 
       if (newIndex !== currentIndex) {
         positions.value = objectMove(positions.value, currentIndex, newIndex);
-        runOnJS(onDragMove)(itemId, newIndex, contentPos);
+        runOnJS(onDragMove)(itemId, newIndex, clamp(rawContentPos, 0, totalSize - itemHeight));
       }
 
-      // Update touch position for auto-scroll detection (handled by useAutoScroll hook)
-      touchPosition.value = isHorizontal ? event.absoluteX : event.absoluteY;
+      // Update touch position for auto-scroll
+      if (isScrollMode) {
+        touchPosition.value = isHorizontal ? event.absoluteX : event.absoluteY;
+      }
     })
     .onEnd(() => {
       'worklet';
       const finalIndex = positions.value[itemId];
-      const fromIndex = startPosition.value;
-      const finalPosition = currentPrefixSum.value[finalIndex] ?? 0;
+      const fromIndex = startPositionIndex.value;
+      const finalPos = currentPrefixSum.value[finalIndex] ?? 0;
 
-      isDragging.value = false;
-      isPressing.value = false;
-      isActive.value = false;
-      activeId.value = null;
+      // Calculate current visual position (for seamless snap-back)
+      let currentContentPos = startPixelPos.value + gestureTranslation.value;
+      if (isScrollMode) {
+        currentContentPos += scrollOffset.value - startScrollOffset.value;
+      }
+      currentContentPos = clamp(currentContentPos, 0, totalSize - itemHeight);
 
-      liftedAnimatedScale.value = withTiming(1, SCALE_CONFIG);
-
-      const scrollChange = scrollOffset.value - startScrollOffset_.value;
-      const currentContentPos = clamp(
-        startPixelPosition.value + gestureTranslation.value + scrollChange,
-        0,
-        totalSize - itemHeight
-      );
-
-      // Keep overlay visible during snap-back; hide in animation callback
+      // Set animated position to current visual position BEFORE deactivating
       animatedPosition.value = currentContentPos;
-      animatedPosition.value = withTiming(finalPosition, TIMING_CONFIG, () => {
+
+      // Deactivate
+      isActive.value = false;
+      isPressing.value = false;
+      activeId.value = null;
+      isDragging.value = false;
+
+      // Animate to final position, then fire callback
+      animatedPosition.value = withTiming(finalPos, TIMING_CONFIG, () => {
         'worklet';
-        liftedIsActive.value = false;
-        runOnJS(onDeactivate)();
         if (fromIndex !== finalIndex && !dragEndFired.value) {
           dragEndFired.value = true;
           runOnJS(onDragEnd)(itemId, fromIndex, finalIndex);
@@ -308,76 +258,61 @@ function ScrollSortableItemInner<T>({
     .onFinalize((_event, success) => {
       'worklet';
       if (!success && isActive.value) {
+        // Gesture cancelled while active — animate back
         const currentPos = positions.value[itemId];
-        const targetPosition = currentPrefixSum.value[currentPos] ?? 0;
+        const targetPos = currentPrefixSum.value[currentPos] ?? 0;
 
-        isDragging.value = false;
-        isPressing.value = false;
-        isActive.value = false;
-        activeId.value = null;
-
-        liftedAnimatedScale.value = withTiming(1, SCALE_CONFIG);
-
-        const scrollChange = scrollOffset.value - startScrollOffset_.value;
-        const currentContentPos = clamp(
-          startPixelPosition.value + gestureTranslation.value + scrollChange,
-          0,
-          totalSize - itemHeight
-        );
+        let currentContentPos = startPixelPos.value + gestureTranslation.value;
+        if (isScrollMode) {
+          currentContentPos += scrollOffset.value - startScrollOffset.value;
+        }
+        currentContentPos = clamp(currentContentPos, 0, totalSize - itemHeight);
 
         animatedPosition.value = currentContentPos;
-        animatedPosition.value = withTiming(targetPosition, TIMING_CONFIG, () => {
-          'worklet';
-          liftedIsActive.value = false;
-          runOnJS(onDeactivate)();
-        });
+        isActive.value = false;
+        isPressing.value = false;
+        activeId.value = null;
+        isDragging.value = false;
+
+        animatedPosition.value = withTiming(targetPos, TIMING_CONFIG);
+      } else if (!success) {
+        isPressing.value = false;
       }
     });
 
-  const gesture = Gesture.Simultaneous(longPressGesture, panGesture);
-
   const animatedStyle = useAnimatedStyle(() => {
-    // Active item is hidden — the overlay renders it
-    if (isActive.value) {
-      const scrollChange = scrollOffset.value - startScrollOffset_.value;
-      const rawContentPos = startPixelPosition.value + gestureTranslation.value + scrollChange;
-      const contentPosition = clamp(rawContentPos, 0, totalSize - itemHeight);
+    const active = isActive.value;
+    const pressing = isPressing.value;
 
-      return {
-        position: 'absolute' as const,
-        [isHorizontal ? 'left' : 'top']: contentPosition,
-        [isHorizontal ? 'top' : 'left']: 0,
-        opacity: activeDragStyle?.opacity ?? 0,
-        zIndex: 0,
-      };
+    let mainAxisPos: number;
+    if (active) {
+      let raw = startPixelPos.value + gestureTranslation.value;
+      if (isScrollMode) {
+        raw += scrollOffset.value - startScrollOffset.value;
+      }
+      mainAxisPos = clamp(raw, 0, totalSize - itemHeight);
+    } else {
+      mainAxisPos = animatedPosition.value;
     }
 
-    if (isPressing.value) {
-      return {
-        position: 'absolute' as const,
-        [isHorizontal ? 'left' : 'top']: animatedPosition.value,
-        [isHorizontal ? 'top' : 'left']: 0,
-        opacity: 1,
-        zIndex: 99999,
-        transform: [{ scale: liftedAnimatedScale.value }],
-        shadowColor: '#000',
-        shadowOpacity: 0.35,
-        shadowRadius: 20,
-        shadowOffset: { width: 0, height: 12 },
-        elevation: 24,
-      };
-    }
+    const dragScale = dragEffectConfig?.scale ?? 1.03;
+    const scale = active
+      ? dragScale
+      : pressing
+        ? ACTIVE_SCALE
+        : 1;
 
     return {
       position: 'absolute' as const,
-      [isHorizontal ? 'left' : 'top']: animatedPosition.value,
+      [isHorizontal ? 'left' : 'top']: mainAxisPos,
       [isHorizontal ? 'top' : 'left']: 0,
-      opacity: 1,
-      zIndex: 0,
-      transform: [{ scale: 1 }],
-      shadowOpacity: 0,
-      shadowRadius: 0,
-      elevation: 0,
+      zIndex: active ? 9999 : pressing ? 9998 : 0,
+      transform: [{ scale }],
+      shadowColor: '#000',
+      shadowOpacity: active ? 0.35 : pressing ? 0.15 : 0,
+      shadowRadius: active ? 20 : pressing ? 8 : 0,
+      shadowOffset: { width: 0, height: active ? 12 : pressing ? 4 : 0 },
+      elevation: active ? 24 : pressing ? 6 : 0,
     };
   });
 
@@ -385,13 +320,11 @@ function ScrollSortableItemInner<T>({
     ? { width: itemHeight, height: '100%' as const }
     : { height: itemHeight, width: '100%' as const };
 
-  const currentIndex = originalIndex;
-
   const content = (
     <Animated.View style={[sizeStyle, animatedStyle] as any}>
       <SortableItemRenderer
         item={item}
-        index={currentIndex}
+        index={originalIndex}
         isDragging={false}
         renderer={renderItem}
       />
@@ -400,16 +333,16 @@ function ScrollSortableItemInner<T>({
 
   if (handle) {
     return (
-      <DraggableItemContext.Provider value={{ gesture }}>
+      <DraggableItemContext.Provider value={{ gesture: panGesture }}>
         {content}
       </DraggableItemContext.Provider>
     );
   }
 
-  return <GestureDetector gesture={gesture}>{content}</GestureDetector>;
+  return <GestureDetector gesture={panGesture}>{content}</GestureDetector>;
 }
 
-const ScrollSortableItem = React.memo(ScrollSortableItemInner) as typeof ScrollSortableItemInner;
+const SortableItem = React.memo(SortableItemInner) as typeof SortableItemInner;
 
 // ============ SortableInsertionIndicator ============
 
@@ -440,7 +373,6 @@ function SortableInsertionIndicator({
       const idx = positions.value[id];
       if (idx === undefined) return null;
       const ps = currentPrefixSum.value;
-      // Show indicator at bottom edge of the active item's current slot (inner)
       const lastItemIdx = Math.max(0, ps.length - 2);
       const posIdx = Math.min(idx + 1, lastItemIdx);
       return { idx, position: ps[posIdx] ?? 0 };
@@ -471,7 +403,22 @@ function SortableInsertionIndicator({
   );
 }
 
-// ============ Sortable Component ============
+// ============ SortableList ============
+
+// Static styles (prevent Fabric re-commits from inline style objects)
+const wrapperStyle = StyleSheet.create({
+  root: { overflow: 'visible' as const },
+});
+
+const localStyles = StyleSheet.create({
+  contentRelative: {
+    position: 'relative',
+  },
+  fixedContainer: {
+    position: 'relative',
+    overflow: 'visible',
+  },
+});
 
 export function SortableList<T>({
   id = 'default',
@@ -492,24 +439,20 @@ export function SortableList<T>({
   onDragMove: onDragMoveProp,
   onDragEnd: onDragEndProp,
 }: SortableListProps<T>) {
-  const dragEffect = dragEffectProp ? resolveDragEffect(dragEffectProp) : undefined;
+  const dragEffectConfig = dragEffectProp ? resolveDragEffect(dragEffectProp) : undefined;
   const scrollViewRef = useAnimatedRef<Animated.ScrollView>();
   const isHoriz = direction === 'horizontal';
 
-  // Extract gap from user's style so position calculations account for it automatically
+  // Extract gap from user's style
   const flatStyle = StyleSheet.flatten(style) as any;
   const gap = (isHoriz ? flatStyle?.columnGap : flatStyle?.rowGap) ?? flatStyle?.gap ?? 0;
-
-  const portal = usePortal();
-  const zeroSV = useSharedValue(0);
-  const outletPageX = portal?.outletPageX ?? zeroSV;
-  const outletPageY = portal?.outletPageY ?? zeroSV;
 
   const {
     isScrollMode,
     isHorizontal,
     heights,
     totalSize,
+    originalPrefixSum,
     originalPrefixSumSV,
     currentPrefixSumSV,
     positions,
@@ -519,7 +462,6 @@ export function SortableList<T>({
     containerStartCross,
     containerCrossAxisSize,
     scrollOffset,
-    autoScrollDirection,
     touchPosition,
     dragContentPosition,
     dragItemSize,
@@ -545,93 +487,64 @@ export function SortableList<T>({
     scrollRef: scrollViewRef,
   });
 
-  // Lifted shared values for the drag overlay
-  const liftedGestureTranslation = useSharedValue(0);
-  const liftedStartPixelPosition = useSharedValue(0);
-  const liftedStartScrollOffset = useSharedValue(0);
-  const liftedAnimatedScale = useSharedValue(1);
-  const liftedIsActive = useSharedValue(false);
+  // Render items
+  const items = data.map((item, index) => (
+    <SortableItem
+      key={keyExtractor(item)}
+      item={item}
+      itemId={keyExtractor(item)}
+      originalIndex={index}
+      itemCount={data.length}
+      itemHeight={heights[index]}
+      totalSize={totalSize}
+      gap={gap}
+      direction={direction}
+      handle={handle}
+      dragEffectConfig={dragEffectConfig}
+      initialPixelPosition={originalPrefixSum[index] ?? 0}
+      positions={positions}
+      activeId={activeId}
+      isDragging={isDragging}
+      originalPrefixSum={originalPrefixSumSV}
+      currentPrefixSum={currentPrefixSumSV}
+      scrollOffset={scrollOffset}
+      touchPosition={touchPosition}
+      dragContentPosition={dragContentPosition}
+      dragItemSize={dragItemSize}
+      isScrollMode={isScrollMode}
+      renderItem={renderItem}
+      onDragStart={handleDragStart}
+      onDragMove={handleDragMove}
+      onDragEnd={handleDragEnd}
+    />
+  ));
 
-  // Apply drag effect to overlay scale when drag becomes active
-  useAnimatedReaction(
-    () => liftedIsActive.value,
-    (active, prev) => {
-      if (active && !prev && dragEffect) {
-        liftedAnimatedScale.value = withSpring(dragEffect.scale, dragEffect.spring);
-      }
-    }
-  );
+  const indicator = renderInsertIndicator ? (
+    <SortableInsertionIndicator
+      positions={positions}
+      activeId={activeId}
+      isDragging={isDragging}
+      currentPrefixSum={currentPrefixSumSV}
+      direction={direction}
+      renderIndicator={renderInsertIndicator}
+    />
+  ) : null;
 
-  // Active item state for overlay rendering (JS thread)
-  const [activeItem, setActiveItemState] = useState<T | null>(null);
-  const [activeOriginalIndex, setActiveOriginalIndex] = useState(-1);
-
-  const onActivate = useCallback((item: T, index: number) => {
-    setActiveItemState(item);
-    setActiveOriginalIndex(index);
-  }, []);
-
-  const onDeactivate = useCallback(() => {
-    setActiveItemState(null);
-    setActiveOriginalIndex(-1);
-  }, []);
-
-  // Portal offsets: convert container-relative overlay position to portal-relative
-  const portalOffsetX = useDerivedValue(() => {
-    const containerPageX = isHorizontal ? containerStart.value : containerStartCross.value;
-    return containerPageX - outletPageX.value;
-  });
-  const portalOffsetY = useDerivedValue(() => {
-    const containerPageY = isHorizontal ? containerStartCross.value : containerStart.value;
-    return containerPageY - outletPageY.value;
-  });
-
-  // Send overlay through portal when available
-  useEffect(() => {
-    if (!portal) return;
-    if (activeItem === null) {
-      portal.setOverlay(`sortable-${id}`, null);
-      return;
-    }
-    portal.setOverlay(`sortable-${id}`,
-      <SortableDragOverlay
-        item={activeItem}
-        originalIndex={activeOriginalIndex}
-        itemHeight={heights[activeOriginalIndex] ?? 0}
-        totalSize={totalSize}
-        direction={direction}
-        mode={isScrollMode ? 'scroll' : 'fixed'}
-        scrollOffset={isScrollMode ? scrollOffset : undefined}
-        startScrollOffset={isScrollMode ? liftedStartScrollOffset : undefined}
-        startPixelPosition={liftedStartPixelPosition}
-        gestureTranslation={liftedGestureTranslation}
-        animatedScale={liftedAnimatedScale}
-        isActive={liftedIsActive}
-        renderItem={renderItem}
-        portalOffsetX={portalOffsetX}
-        portalOffsetY={portalOffsetY}
-        crossAxisSize={containerCrossAxisSize}
-      />
-    );
-    return () => portal.setOverlay(`sortable-${id}`, null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [portal, activeItem, activeOriginalIndex]);
-
-  // Scroll mode rendering
+  // Scroll mode
   if (isScrollMode) {
-    const scrollContainerStyle = isHorizontal
+    const scrollContainerSize = isHorizontal
       ? { width: containerSize, height: '100%' as const }
       : { height: containerSize, width: '100%' as const };
 
-    const contentContainerStyle = isHorizontal
+    const contentSize = isHorizontal
       ? { width: totalSize, height: '100%' as const }
       : { height: totalSize, width: '100%' as const };
 
     return (
-      <View style={{ overflow: 'visible' as const }}>
+      <View style={wrapperStyle.root}>
         <View
           ref={containerRef}
-          style={[sortableStyles.container, scrollContainerStyle, style]}
+          style={[sortableStyles.container, scrollContainerSize, style]}
           onLayout={handleContainerLayout}
         >
           <Animated.ScrollView
@@ -644,157 +557,31 @@ export function SortableList<T>({
             bounces={false}
             overScrollMode="never"
           >
-            <View style={[sortableStyles.content, contentContainerStyle, { position: 'relative' as const }]}>
-              {data.map((item, index) => (
-                <ScrollSortableItem
-                  key={keyExtractor(item)}
-                  item={item}
-                  itemId={keyExtractor(item)}
-                  originalIndex={index}
-                  itemCount={data.length}
-                  itemHeight={heights[index]}
-                  totalSize={totalSize}
-                  gap={gap}
-                  containerSize={containerSize!}
-                  autoScrollThreshold={autoScrollThreshold}
-                  direction={direction}
-                  handle={handle}
-                  activeDragStyle={activeDragStyle}
-                  positions={positions}
-                  originalPrefixSum={originalPrefixSumSV}
-                  currentPrefixSum={currentPrefixSumSV}
-                  activeId={activeId}
-                  isDragging={isDragging}
-                  scrollOffset={scrollOffset}
-                  containerStart={containerStart}
-                  touchPosition={touchPosition}
-                  dragContentPosition={dragContentPosition}
-                  dragItemSize={dragItemSize}
-                  liftedGestureTranslation={liftedGestureTranslation}
-                  liftedStartPixelPosition={liftedStartPixelPosition}
-                  liftedStartScrollOffset={liftedStartScrollOffset}
-                  liftedAnimatedScale={liftedAnimatedScale}
-                  liftedIsActive={liftedIsActive}
-                  onActivate={onActivate}
-                  onDeactivate={onDeactivate}
-                  renderItem={renderItem}
-                  onDragStart={handleDragStart}
-                  onDragMove={handleDragMove}
-                  onDragEnd={handleDragEnd}
-                />
-              ))}
-              {renderInsertIndicator && (
-                <SortableInsertionIndicator
-                  positions={positions}
-                  activeId={activeId}
-                  isDragging={isDragging}
-                  currentPrefixSum={currentPrefixSumSV}
-                  direction={direction}
-                  renderIndicator={renderInsertIndicator}
-                />
-              )}
+            <View style={[localStyles.contentRelative, contentSize]}>
+              {items}
+              {indicator}
             </View>
           </Animated.ScrollView>
         </View>
-
-        {/* Drag overlay — rendered outside overflow:hidden container (inline fallback) */}
-        {!portal && (
-          <SortableDragOverlay
-            item={activeItem}
-            originalIndex={activeOriginalIndex}
-            itemHeight={heights[activeOriginalIndex] ?? 0}
-            totalSize={totalSize}
-            direction={direction}
-            mode="scroll"
-            scrollOffset={scrollOffset}
-            startScrollOffset={liftedStartScrollOffset}
-            startPixelPosition={liftedStartPixelPosition}
-            gestureTranslation={liftedGestureTranslation}
-            animatedScale={liftedAnimatedScale}
-            isActive={liftedIsActive}
-            renderItem={renderItem}
-          />
-        )}
       </View>
     );
   }
 
-  // Fixed mode rendering (no scroll)
-  const containerStyle = [
-    sortableStyles.container,
-    isHorizontal
-      ? { flexDirection: 'row' as const }
-      : { flexDirection: 'column' as const },
-    style,
-  ];
+  // Fixed mode
+  const fixedContainerSize = isHorizontal
+    ? { width: totalSize, flexDirection: 'row' as const }
+    : { height: totalSize, flexDirection: 'column' as const };
 
   return (
-    <View style={{ overflow: 'visible' as const }}>
+    <View style={wrapperStyle.root}>
       <View
         ref={containerRef}
-        style={containerStyle}
+        style={[localStyles.fixedContainer, fixedContainerSize, style]}
         onLayout={handleContainerLayout}
       >
-        {data.map((item, index) => (
-          <FixedSortableItem
-            key={keyExtractor(item)}
-            item={item}
-            itemId={keyExtractor(item)}
-            originalIndex={index}
-            itemCount={data.length}
-            itemHeight={heights[index]}
-            totalSize={totalSize}
-            gap={gap}
-            direction={direction}
-            handle={handle}
-            activeDragStyle={activeDragStyle}
-            zoneId={id}
-            positions={positions}
-            originalPrefixSum={originalPrefixSumSV}
-            currentPrefixSum={currentPrefixSumSV}
-            activeId={activeId}
-            isDragging={isDragging}
-            containerStart={containerStart}
-            liftedGestureTranslation={liftedGestureTranslation}
-            liftedStartPixelPosition={liftedStartPixelPosition}
-            liftedAnimatedScale={liftedAnimatedScale}
-            liftedIsActive={liftedIsActive}
-            onActivate={onActivate}
-            onDeactivate={onDeactivate}
-            renderItem={renderItem}
-            onDragStart={handleDragStart}
-            onDragMove={handleDragMove}
-            onDragEnd={handleDragEnd}
-          />
-        ))}
-        {renderInsertIndicator && (
-          <SortableInsertionIndicator
-            positions={positions}
-            activeId={activeId}
-            isDragging={isDragging}
-            currentPrefixSum={currentPrefixSumSV}
-            direction={direction}
-            renderIndicator={renderInsertIndicator}
-          />
-        )}
+        {items}
+        {indicator}
       </View>
-
-      {/* Drag overlay — rendered outside overflow:hidden container (inline fallback) */}
-      {!portal && (
-        <SortableDragOverlay
-          item={activeItem}
-          originalIndex={activeOriginalIndex}
-          itemHeight={heights[activeOriginalIndex] ?? 0}
-          totalSize={totalSize}
-          direction={direction}
-          mode="fixed"
-          startPixelPosition={liftedStartPixelPosition}
-          gestureTranslation={liftedGestureTranslation}
-          animatedScale={liftedAnimatedScale}
-          isActive={liftedIsActive}
-          renderItem={renderItem}
-        />
-      )}
     </View>
   );
 }

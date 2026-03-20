@@ -117,16 +117,16 @@ export function SortableDragOverlay<T>({
     ? { width: itemHeight, height: '100%' as const }
     : { height: itemHeight, width: '100%' as const };
 
-  if (item === null) return null;
-
   return (
     <Animated.View style={[sizeStyle, animatedStyle] as any} pointerEvents="none">
-      <SortableItemRenderer
-        item={item}
-        index={originalIndex}
-        isDragging={true}
-        renderer={renderItem}
-      />
+      {item !== null && (
+        <SortableItemRenderer
+          item={item}
+          index={originalIndex}
+          isDragging={true}
+          renderer={renderItem}
+        />
+      )}
     </Animated.View>
   );
 }

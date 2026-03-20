@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
-import { View } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -136,10 +136,7 @@ function DragOverlayLayer({
   if (!activeIdState || !renderer) return null;
 
   return (
-    <View
-      style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, pointerEvents: 'none', zIndex: 99999 }}
-      collapsable={false}
-    >
+    <View style={contextStyles.overlayWrapper} collapsable={false}>
       <Animated.View style={overlayStyle} pointerEvents="none">
         {renderer()}
       </Animated.View>
@@ -414,7 +411,7 @@ export function DndContextProvider({
 
   return (
     <DndContext.Provider value={contextValue}>
-      <Animated.View ref={containerRef as any} style={{ flex: 1, position: 'relative', overflow: 'visible' }} collapsable={false}>
+      <Animated.View ref={containerRef as any} style={contextStyles.container} collapsable={false}>
         {children}
         {/* Only render the overlay inline when no portal is wrapping this provider */}
         {!portal && (
@@ -438,3 +435,15 @@ export function DndContextProvider({
     </DndContext.Provider>
   );
 }
+
+const contextStyles = StyleSheet.create({
+  container: { position: 'relative' as const, overflow: 'visible' as const },
+  overlayWrapper: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 99999,
+  },
+});

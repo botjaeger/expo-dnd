@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState, useMemo } from 'react';
+import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import { View, FlatList, ListRenderItemInfo, StyleSheet } from 'react-native';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import Animated, {
@@ -259,7 +259,7 @@ function FlatListCellItemInner<T>({
     ? { width: itemHeight, height: '100%' as const }
     : { height: itemHeight, width: '100%' as const };
 
-  let dragHandleGesture: ReturnType<typeof Gesture.Simultaneous> | null = null;
+  let dragHandleGesture: ReturnType<typeof Gesture.Pan> | null = null;
   if (
     handleEnabled &&
     handleIsActiveGesture &&
@@ -278,27 +278,13 @@ function FlatListCellItemInner<T>({
     handleOnDragMove &&
     handleOnDragEnd
   ) {
-    let longPressGesture = Gesture.LongPress()
-      .minDuration(LONG_PRESS_DURATION)
+    let panGesture = Gesture.Pan()
+      .activateAfterLongPress(LONG_PRESS_DURATION)
       .onBegin(() => {
         'worklet';
         pressingId.value = itemId;
         animatedScale.value = withTiming(ACTIVE_SCALE, { duration: 100 });
       })
-      .onFinalize(() => {
-        'worklet';
-        if (!handleIsActiveGesture.value) {
-          pressingId.value = null;
-          animatedScale.value = withTiming(1, { duration: 100 });
-        }
-      });
-
-    if (handleScrollGesture) {
-      longPressGesture = longPressGesture.simultaneousWithExternalGesture(handleScrollGesture);
-    }
-
-    const panGesture = Gesture.Pan()
-      .activateAfterLongPress(LONG_PRESS_DURATION)
       .onStart((event) => {
         'worklet';
         const currentPos = positions.value[itemId] ?? originalIndex;
@@ -381,10 +367,18 @@ function FlatListCellItemInner<T>({
           activeId.value = null;
 
           runOnJS(handleOnDeactivate)();
+        } else if (!success) {
+          // Touch ended before drag activated — reset press feedback
+          pressingId.value = null;
+          animatedScale.value = withTiming(1, { duration: 100 });
         }
       });
 
-    dragHandleGesture = Gesture.Simultaneous(longPressGesture, panGesture);
+    if (handleScrollGesture) {
+      panGesture = panGesture.simultaneousWithExternalGesture(handleScrollGesture);
+    }
+
+    dragHandleGesture = panGesture;
   }
 
   const content = (
@@ -582,9 +576,8 @@ interface GestureWrapperProps<T> {
   startScrollOffset: SharedValue<number>;
   animatedScale: SharedValue<number>;
   isActiveGesture: SharedValue<boolean>;
-  activeItem: T | null;
-  activeOriginalIndex: number;
-  setActiveItem: (item: T | null, index: number) => void;
+  onActivate: (item: T, index: number) => void;
+  onDeactivate: () => void;
   onDragStart: (id: string, index: number) => void;
   onDragMove: (id: string, overIndex: number, position: number) => void;
   onDragEnd: (id: string, fromIndex: number, toIndex: number) => void;
@@ -617,9 +610,8 @@ function GestureWrapper<T>({
   startScrollOffset,
   animatedScale,
   isActiveGesture,
-  activeItem,
-  activeOriginalIndex,
-  setActiveItem,
+  onActivate,
+  onDeactivate,
   onDragStart,
   onDragMove,
   onDragEnd,
@@ -629,14 +621,15 @@ function GestureWrapper<T>({
   const isHorizontal = direction === 'horizontal';
   const itemCount = data.length;
 
-  // Check for position swaps during auto-scroll and update dragContentPosition
+  // Check for position swaps during auto-scroll and update dragContentPosition.
+  // Uses dragItemSize.value (set in onStart) so we don't need activeOriginalIndex as a prop.
   useAnimatedReaction(
     () => scrollOffset.value,
     (scroll, prevScroll) => {
       if (!isActiveGesture.value || prevScroll === null || activeId.value === null) return;
 
       const scrollChange = scroll - startScrollOffset.value;
-      const activeItemHeight = heights[activeOriginalIndex] ?? 0;
+      const activeItemHeight = dragItemSize.value;
       const contentPos = clamp(
         startPixelPosition.value + gestureTranslation.value + scrollChange,
         0,
@@ -654,22 +647,21 @@ function GestureWrapper<T>({
         positions.value = objectMove(positions.value, currentIndex, newIndex);
       }
     },
-    [itemCount, totalSize, heights, activeOriginalIndex]
+    [itemCount, totalSize]
   );
 
-  const setActiveItemJS = useCallback((itemId: string | null, pos: number) => {
-    if (itemId === null) {
-      setActiveItem(null, -1);
-    } else {
-      const index = data.findIndex((item) => keyExtractor(item) === itemId);
-      if (index !== -1) {
-        setActiveItem(data[index], index);
-      }
+  // JS-thread callback: find the item by id and call onActivate.
+  // Called via runOnJS so it runs after the gesture frame, safely on the JS thread.
+  const activateByItemId = useCallback((itemId: string, pos: number) => {
+    const index = data.findIndex((item) => keyExtractor(item) === itemId);
+    if (index !== -1) {
+      onActivate(data[index], index);
     }
-  }, [data, keyExtractor, setActiveItem]);
+    onDragStart(itemId, pos);
+  }, [data, keyExtractor, onActivate, onDragStart]);
 
-  let longPressGesture = Gesture.LongPress()
-    .minDuration(LONG_PRESS_DURATION)
+  let panGesture = Gesture.Pan()
+    .activateAfterLongPress(LONG_PRESS_DURATION)
     .onBegin((event) => {
       'worklet';
       const touchPos = isHorizontal ? event.x : event.y;
@@ -692,20 +684,6 @@ function GestureWrapper<T>({
         }
       }
     })
-    .onFinalize(() => {
-      'worklet';
-      if (!isActiveGesture.value) {
-        pressingId.value = null;
-        animatedScale.value = withTiming(1, { duration: 100 });
-      }
-    });
-
-  if (scrollGesture) {
-    longPressGesture = longPressGesture.simultaneousWithExternalGesture(scrollGesture);
-  }
-
-  const panGesture = Gesture.Pan()
-    .activateAfterLongPress(LONG_PRESS_DURATION)
     .onStart((event) => {
       'worklet';
       const touchPos = isHorizontal ? event.x : event.y;
@@ -744,8 +722,7 @@ function GestureWrapper<T>({
 
       animatedScale.value = withTiming(ACTIVE_SCALE, SCALE_CONFIG);
 
-      runOnJS(setActiveItemJS)(pressedItemId, currentPos);
-      runOnJS(onDragStart)(pressedItemId, currentPos);
+      runOnJS(activateByItemId)(pressedItemId, currentPos);
     })
     .onUpdate((event) => {
       'worklet';
@@ -755,7 +732,7 @@ function GestureWrapper<T>({
       gestureTranslation.value = translation;
 
       const scrollChange = scrollOffset.value - startScrollOffset.value;
-      const activeItemHeight = heights[activeOriginalIndex] ?? 0;
+      const activeItemHeight = dragItemSize.value;
       const contentPos = clamp(
         startPixelPosition.value + translation + scrollChange,
         0,
@@ -791,7 +768,7 @@ function GestureWrapper<T>({
       isActiveGesture.value = false;
       activeId.value = null;
 
-      runOnJS(setActiveItemJS)(null, -1);
+      runOnJS(onDeactivate)();
 
       if (fromIndex !== finalIndex) {
         runOnJS(onDragEnd)(itemId, fromIndex, finalIndex);
@@ -806,11 +783,19 @@ function GestureWrapper<T>({
         isActiveGesture.value = false;
         activeId.value = null;
 
-        runOnJS(setActiveItemJS)(null, -1);
+        runOnJS(onDeactivate)();
+      } else if (!success) {
+        // Touch ended before drag activated — reset press feedback
+        pressingId.value = null;
+        animatedScale.value = withTiming(1, { duration: 100 });
       }
     });
 
-  const gesture = Gesture.Simultaneous(longPressGesture, panGesture);
+  if (scrollGesture) {
+    panGesture = panGesture.simultaneousWithExternalGesture(scrollGesture);
+  }
+
+  const gesture = panGesture;
 
   return (
     <GestureDetector gesture={gesture}>
@@ -955,13 +940,12 @@ interface SortableFlatListScrollModeRendererProps<T> {
   startScrollOffset: SharedValue<number>;
   animatedScale: SharedValue<number>;
   isActiveGesture: SharedValue<boolean>;
-  activeItem: T | null;
-  activeOriginalIndex: number;
-  setActiveItem: (item: T | null, index: number) => void;
+  onActivate: (item: T, index: number) => void;
+  onDeactivate: () => void;
   handleDragStart: (id: string, index: number) => void;
   handleDragMove: (id: string, overIndex: number, position: number) => void;
   handleDragEnd: (id: string, fromIndex: number, toIndex: number) => void;
-  portal: ReturnType<typeof usePortal>;
+  overlayNode: React.ReactNode;
   renderItem: SortableRenderItem<T>;
   renderInsertIndicator?: (index: number) => React.ReactNode;
 }
@@ -1001,13 +985,12 @@ function SortableFlatListScrollModeRenderer<T>({
   startScrollOffset,
   animatedScale,
   isActiveGesture,
-  activeItem,
-  activeOriginalIndex,
-  setActiveItem,
+  onActivate,
+  onDeactivate,
   handleDragStart,
   handleDragMove,
   handleDragEnd,
-  portal,
+  overlayNode,
   renderItem,
   renderInsertIndicator,
 }: SortableFlatListScrollModeRendererProps<T>) {
@@ -1036,33 +1019,13 @@ function SortableFlatListScrollModeRenderer<T>({
     startScrollOffset,
     animatedScale,
     isActiveGesture,
-    activeItem,
-    activeOriginalIndex,
-    setActiveItem,
+    onActivate,
+    onDeactivate,
     onDragStart: handleDragStart,
     onDragMove: handleDragMove,
     onDragEnd: handleDragEnd,
     scrollGesture: nativeScrollGesture,
   };
-
-  const overlay = !portal ? (
-    <DragOverlay
-      item={activeItem}
-      originalIndex={activeOriginalIndex}
-      itemHeight={heights[activeOriginalIndex] ?? 0}
-      containerSize={containerSize}
-      direction={direction}
-      totalSize={totalSize}
-      positions={positions}
-      startPixelPosition={startPixelPosition}
-      gestureTranslation={gestureTranslation}
-      scrollOffset={scrollOffset}
-      startScrollOffset={startScrollOffset}
-      animatedScale={animatedScale}
-      isActive={isActiveGesture}
-      renderItem={renderItem}
-    />
-  ) : null;
 
   const indicator = renderInsertIndicator ? (
     <FlatListInsertionIndicator
@@ -1097,7 +1060,7 @@ function SortableFlatListScrollModeRenderer<T>({
           scrollHandler={scrollHandler}
         />
       )}
-      overlay={<>{indicator}{overlay}</>}
+      overlay={<>{indicator}{overlayNode}</>}
     />
   );
 }
@@ -1186,61 +1149,69 @@ function useSortableFlatListRenderHelpers<T>({
   };
 }
 
-interface UseSortableFlatListOverlayOptions<T> {
+// ============ FlatList Overlay Host ============
+// Holds activeItem state in a separate component so its re-renders don't
+// trigger Fabric commits on the parent SortableFlatList — which would cancel
+// active gesture recognizers on iOS with New Architecture.
+
+interface FlatListOverlayHostProps<T> {
+  setterRef: React.MutableRefObject<((item: T | null, index: number) => void) | null>;
   id: string;
-  activeItem: T | null;
-  activeOriginalIndex: number;
   heights: number[];
   totalSize: number;
   direction: 'horizontal' | 'vertical';
   isScrollMode: boolean;
-  containerStart: SharedValue<number>;
-  containerStartCross: SharedValue<number>;
-  containerCrossAxisSize: SharedValue<number>;
   scrollOffset: SharedValue<number>;
   startScrollOffset: SharedValue<number>;
   startPixelPosition: SharedValue<number>;
   gestureTranslation: SharedValue<number>;
   animatedScale: SharedValue<number>;
   isActiveGesture: SharedValue<boolean>;
+  portal: ReturnType<typeof usePortal>;
+  portalOffsetX: SharedValue<number>;
+  portalOffsetY: SharedValue<number>;
+  containerCrossAxisSize: SharedValue<number>;
   renderItem: SortableRenderItem<T>;
+  /** For non-scroll-mode FlatList overlay (DragOverlay uses viewport-relative positioning) */
+  containerSize?: number;
+  positions?: SharedValue<{ [id: string]: number }>;
 }
 
-function useSortableFlatListOverlay<T>({
+function FlatListOverlayHost<T>({
+  setterRef,
   id,
-  activeItem,
-  activeOriginalIndex,
   heights,
   totalSize,
   direction,
   isScrollMode,
-  containerStart,
-  containerStartCross,
-  containerCrossAxisSize,
   scrollOffset,
   startScrollOffset,
   startPixelPosition,
   gestureTranslation,
   animatedScale,
   isActiveGesture,
+  portal,
+  portalOffsetX,
+  portalOffsetY,
+  containerCrossAxisSize,
   renderItem,
-}: UseSortableFlatListOverlayOptions<T>) {
-  const portal = usePortal();
-  const zeroSV = useSharedValue(0);
-  const outletPageX = portal?.outletPageX ?? zeroSV;
-  const outletPageY = portal?.outletPageY ?? zeroSV;
+  containerSize,
+  positions,
+}: FlatListOverlayHostProps<T>) {
+  const [activeItem, setActiveItem] = useState<T | null>(null);
+  const [activeIndex, setActiveIndex] = useState(-1);
 
-  const isHorizontal = direction === 'horizontal';
+  // Register the setter so the parent can trigger state updates here
+  // without re-rendering itself
+  useEffect(() => {
+    setterRef.current = (item: T | null, index: number) => {
+      setActiveItem(item);
+      setActiveIndex(index);
+    };
+    return () => { setterRef.current = null; };
+  }, [setterRef]);
 
-  const portalOffsetX = useDerivedValue(() => {
-    const containerPageX = isHorizontal ? containerStart.value : containerStartCross.value;
-    return containerPageX - outletPageX.value;
-  });
-  const portalOffsetY = useDerivedValue(() => {
-    const containerPageY = isHorizontal ? containerStartCross.value : containerStart.value;
-    return containerPageY - outletPageY.value;
-  });
-
+  // Push overlay into portal when available
   useEffect(() => {
     if (!portal) return;
     if (activeItem === null) {
@@ -1250,8 +1221,8 @@ function useSortableFlatListOverlay<T>({
     portal.setOverlay(`sortable-flatlist-${id}`,
       <SortableDragOverlay
         item={activeItem}
-        originalIndex={activeOriginalIndex}
-        itemHeight={heights[activeOriginalIndex] ?? 0}
+        originalIndex={activeIndex}
+        itemHeight={heights[activeIndex] ?? 0}
         totalSize={totalSize}
         direction={direction}
         mode={isScrollMode ? 'scroll' : 'fixed'}
@@ -1267,11 +1238,50 @@ function useSortableFlatListOverlay<T>({
         crossAxisSize={containerCrossAxisSize}
       />
     );
-    return () => portal.setOverlay(`sortable-flatlist-${id}`, null);
+    return () => { portal.setOverlay(`sortable-flatlist-${id}`, null); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [portal, activeItem, activeOriginalIndex]);
+  }, [portal, activeItem, activeIndex]);
 
-  return portal;
+  if (portal) return null;
+
+  // Scroll mode: use viewport-relative DragOverlay
+  if (isScrollMode && containerSize !== undefined && positions !== undefined) {
+    return (
+      <DragOverlay
+        item={activeItem}
+        originalIndex={activeIndex}
+        itemHeight={heights[activeIndex] ?? 0}
+        containerSize={containerSize}
+        direction={direction}
+        totalSize={totalSize}
+        positions={positions}
+        startPixelPosition={startPixelPosition}
+        gestureTranslation={gestureTranslation}
+        scrollOffset={scrollOffset}
+        startScrollOffset={startScrollOffset}
+        animatedScale={animatedScale}
+        isActive={isActiveGesture}
+        renderItem={renderItem}
+      />
+    );
+  }
+
+  // Fixed mode: use SortableDragOverlay
+  return (
+    <SortableDragOverlay
+      item={activeItem}
+      originalIndex={activeIndex}
+      itemHeight={heights[activeIndex] ?? 0}
+      totalSize={totalSize}
+      direction={direction}
+      mode="fixed"
+      startPixelPosition={startPixelPosition}
+      gestureTranslation={gestureTranslation}
+      animatedScale={animatedScale}
+      isActive={isActiveGesture}
+      renderItem={renderItem}
+    />
+  );
 }
 
 // ============ SortableFlatList Component ============
@@ -1322,18 +1332,17 @@ export function SortableFlatList<T>({
       }
     }
   );
-  const [activeItem, setActiveItemState] = useState<T | null>(null);
-  const [activeOriginalIndex, setActiveOriginalIndex] = useState(-1);
-  const setActiveItem = useCallback((item: T | null, index: number) => {
-    setActiveItemState(item);
-    setActiveOriginalIndex(index);
-  }, []);
+  // Active item communicated via ref so SortableFlatList does NOT re-render.
+  // FlatListOverlayHost (a sibling of the gesture container) holds its own state
+  // and re-renders independently — preventing Fabric commits from cancelling gestures on iOS.
+  const overlaySetterRef = useRef<((item: T | null, index: number) => void) | null>(null);
+
   const onItemActivate = useCallback((item: T, index: number) => {
-    setActiveItem(item, index);
-  }, [setActiveItem]);
+    overlaySetterRef.current?.(item, index);
+  }, []);
   const onItemDeactivate = useCallback(() => {
-    setActiveItem(null, -1);
-  }, [setActiveItem]);
+    overlaySetterRef.current?.(null, -1);
+  }, []);
   const isScrollMode = containerSize !== undefined;
   const {
     isHorizontal,
@@ -1457,25 +1466,46 @@ export function SortableFlatList<T>({
     handleGestureConfig,
     renderItem,
   });
-  const portal = useSortableFlatListOverlay({
-    id,
-    activeItem,
-    activeOriginalIndex,
-    heights,
-    totalSize,
-    direction,
-    isScrollMode,
-    containerStart,
-    containerStartCross,
-    containerCrossAxisSize,
-    scrollOffset,
-    startScrollOffset,
-    startPixelPosition,
-    gestureTranslation,
-    animatedScale,
-    isActiveGesture,
-    renderItem,
+  // Portal offset computation — convert container-relative overlay position to portal-relative
+  const portal = usePortal();
+  const isHorizontal2 = direction === 'horizontal';
+  const outletPageX = portal?.outletPageX ?? zeroSV;
+  const outletPageY = portal?.outletPageY ?? zeroSV;
+  const portalOffsetX = useDerivedValue(() => {
+    const containerPageX = isHorizontal2 ? containerStart.value : containerStartCross.value;
+    return containerPageX - outletPageX.value;
   });
+  const portalOffsetY = useDerivedValue(() => {
+    const containerPageY = isHorizontal2 ? containerStartCross.value : containerStart.value;
+    return containerPageY - outletPageY.value;
+  });
+
+  // Overlay host node — rendered as a sibling of the gesture container so
+  // its state updates don't cause Fabric commits on the container's native views.
+  const overlayHost = (
+    <FlatListOverlayHost
+      setterRef={overlaySetterRef}
+      id={id}
+      heights={heights}
+      totalSize={totalSize}
+      direction={direction}
+      isScrollMode={isScrollMode}
+      scrollOffset={scrollOffset}
+      startScrollOffset={startScrollOffset}
+      startPixelPosition={startPixelPosition}
+      gestureTranslation={gestureTranslation}
+      animatedScale={animatedScale}
+      isActiveGesture={isActiveGesture}
+      portal={portal}
+      portalOffsetX={portalOffsetX}
+      portalOffsetY={portalOffsetY}
+      containerCrossAxisSize={containerCrossAxisSize}
+      renderItem={renderItem}
+      containerSize={containerSize}
+      positions={positions}
+    />
+  );
+
   if (isScrollMode) {
     return (
       <SortableFlatListScrollModeRenderer
@@ -1513,13 +1543,12 @@ export function SortableFlatList<T>({
         startScrollOffset={startScrollOffset}
         animatedScale={animatedScale}
         isActiveGesture={isActiveGesture}
-        activeItem={activeItem}
-        activeOriginalIndex={activeOriginalIndex}
-        setActiveItem={setActiveItem}
+        onActivate={onItemActivate}
+        onDeactivate={onItemDeactivate}
         handleDragStart={handleDragStart}
         handleDragMove={handleDragMove}
         handleDragEnd={handleDragEnd}
-        portal={portal}
+        overlayNode={overlayHost}
         renderItem={renderItem}
         renderInsertIndicator={renderInsertIndicator}
       />
@@ -1584,21 +1613,9 @@ export function SortableFlatList<T>({
         )}
       </View>
 
-      {!portal && (
-        <SortableDragOverlay
-          item={activeItem}
-          originalIndex={activeOriginalIndex}
-          itemHeight={heights[activeOriginalIndex] ?? 0}
-          totalSize={totalSize}
-          direction={direction}
-          mode="fixed"
-          startPixelPosition={startPixelPosition}
-          gestureTranslation={gestureTranslation}
-          animatedScale={animatedScale}
-          isActive={isActiveGesture}
-          renderItem={renderItem}
-        />
-      )}
+      {/* Drag overlay — rendered in a separate component so its state updates
+          don't cause Fabric commits on the container (which cancel gestures on iOS) */}
+      {overlayHost}
     </View>
   );
 }
