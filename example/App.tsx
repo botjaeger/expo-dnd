@@ -377,14 +377,12 @@ export default function App() {
             </TouchableOpacity>
           ))}
         </ScrollView>
-        <View style={s.content}>
-          <View style={s.contentInner}>
-            {active === 'Drag & Drop' && <Demo1 />}
-            {active === 'Sortable' && <Demo2 />}
-            {active === 'Cross-List' && <Demo3 />}
-            {active === 'Variable Heights' && <Demo4 />}
-            {active === 'Custom Hooks' && <Demo5 />}
-          </View>
+        <View style={s.contentWrap}>
+          {active === 'Drag & Drop' && <Demo1 />}
+          {active === 'Sortable' && <Demo2 />}
+          {active === 'Cross-List' && <Demo3 />}
+          {active === 'Variable Heights' && <Demo4 />}
+          {active === 'Custom Hooks' && <Demo5 />}
         </View>
       </SafeAreaView>
     </GestureHandlerRootView>
@@ -403,6 +401,7 @@ const s = StyleSheet.create({
   tabText: { fontFamily: 'monospace', fontSize: 12, color: C.muted },
   tabTextActive: { color: '#fff', fontWeight: '600' },
   content: { flex: 1 },
+  contentWrap: { flex: 1, padding: 16 },
   contentInner: { padding: 16 },
   demoWrap: { flex: 1 },
 
