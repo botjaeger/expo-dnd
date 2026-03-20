@@ -2,7 +2,9 @@
 
 Cross-platform drag and drop for React Native. iOS, Android, and Web.
 
-Built on [Reanimated 3](https://docs.swmansion.com/react-native-reanimated/) and [Gesture Handler 2](https://docs.swmansion.com/react-native-gesture-handler/). All animations run at 60 fps on the UI thread.
+Built on [Reanimated](https://docs.swmansion.com/react-native-reanimated/) (3+ and 4+) and [Gesture Handler](https://docs.swmansion.com/react-native-gesture-handler/) (2+). All animations run at 60 fps on the UI thread.
+
+**[Documentation & Demos](https://botjaeger.github.io/expo-dnd/)** · **[Try on Device (Expo Go)](https://expo.dev/preview/update?message=Demo%20app%20%E2%80%94%20drag%20%26%20drop%20examples&updateRuntimeVersion=1.0.0&createdAt=2026-03-20&slug=expo-dnd-example&projectId=cd6c8cd2-7c32-439a-a2f9-06e785c221d0&group=24d78f48-62a8-42fb-9b2a-47c855ddab8b)**
 
 ## Install
 
@@ -13,7 +15,7 @@ npx expo install @botjaeger/expo-dnd
 **Peer dependencies** (must be installed separately):
 
 ```bash
-npx expo install react-native-reanimated react-native-gesture-handler react-native-worklets
+npx expo install react-native-reanimated react-native-gesture-handler
 ```
 
 | Dependency | Version |
@@ -22,7 +24,6 @@ npx expo install react-native-reanimated react-native-gesture-handler react-nati
 | `react-native` | >= 0.72.0 |
 | `react-native-reanimated` | >= 3.0.0 |
 | `react-native-gesture-handler` | >= 2.10.0 |
-| `react-native-worklets` | >= 0.5.0 (Reanimated 4+) |
 
 **Babel plugin** — add to your `babel.config.js`:
 
@@ -35,6 +36,22 @@ plugins: ['react-native-reanimated/plugin']
 ```
 
 > Expo SDK 54+ includes the worklets plugin automatically via `babel-preset-expo`.
+>
+> Reanimated 4+ also requires `react-native-worklets` — install it with `npx expo install react-native-worklets`.
+
+**Root wrapper** — your app must be wrapped in `GestureHandlerRootView`:
+
+```tsx
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+
+export default function App() {
+  return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      {/* your app */}
+    </GestureHandlerRootView>
+  );
+}
+```
 
 ## Quick Start
 
@@ -85,13 +102,15 @@ function App() {
       keyExtractor={(item) => item.id}
       direction="vertical"
       dragEffect="pickup"
-      activeDragStyle={{ opacity: 0.3 }}
-      renderItem={({ item, isDragging }) => (
-        <View style={[styles.row, isDragging && styles.ghost]}>
+      renderItem={({ item }) => (
+        <View style={styles.row}>
           <Text>{item.label}</Text>
         </View>
       )}
-      onReorder={(data) => setItems(data)}
+      onReorder={(data, event) => {
+        setItems(data);
+        console.log(`Moved from ${event.fromIndex} to ${event.toIndex}`);
+      }}
     />
   );
 }
@@ -118,6 +137,7 @@ function App() {
         data={todoItems}
         keyExtractor={(item) => item.id}
         itemSize={40}
+        direction="vertical"
         renderItem={renderItem}
       />
       <DraggableList
@@ -125,12 +145,15 @@ function App() {
         data={doneItems}
         keyExtractor={(item) => item.id}
         itemSize={40}
+        direction="vertical"
         renderItem={renderItem}
       />
     </DraggableListGroup>
   );
 }
 ```
+
+Note: `DraggableList` requires `itemSize` (unlike `SortableList` which auto-measures).
 
 ### Custom Hooks
 
@@ -151,11 +174,11 @@ function MyDraggable({ id, children }) {
   useEffect(() => {
     ctx.registerDragRenderer(id, () => childRef.current);
     return () => ctx.unregisterDragRenderer(id);
-  }, [id]);
+  }, [id, ctx]);
 
   return (
     <GestureDetector gesture={gesture}>
-      <Animated.View ref={ref} style={animatedStyle} onLayout={onLayout}>
+      <Animated.View ref={ref} style={[styles.item, animatedStyle]} onLayout={onLayout}>
         {children}
       </Animated.View>
     </GestureDetector>
@@ -163,7 +186,7 @@ function MyDraggable({ id, children }) {
 }
 
 function MyDropZone({ id, children }) {
-  const { ref, isOver, activeStyle, onLayout } = useDroppable({ id });
+  const { ref, isOver, activeStyle, onLayout } = useDroppable({ id, activeEffect: 'bounce' });
 
   return (
     <Animated.View ref={ref} style={[styles.zone, activeStyle]} onLayout={onLayout}>
@@ -172,6 +195,8 @@ function MyDropZone({ id, children }) {
   );
 }
 ```
+
+`useDraggable` returns an `animatedStyle` that reduces source opacity during drag (default: 0.4). The visual clone (overlay) is rendered automatically by `DndProvider`.
 
 ## API
 
@@ -185,7 +210,7 @@ function MyDropZone({ id, children }) {
 | `Droppable` | Creates a drop zone with hover feedback |
 | `SortableList` | Auto-measuring sortable list (no `itemSize` needed) |
 | `SortableFlatList` | FlatList-backed sortable for large datasets (requires `itemSize`) |
-| `DraggableList` | Single list for cross-list drag and drop |
+| `DraggableList` | Single list for cross-list drag and drop (requires `itemSize`) |
 | `DraggableListGroup` | Coordinates transfers across multiple DraggableLists |
 
 ### Hooks
@@ -198,21 +223,31 @@ function MyDropZone({ id, children }) {
 
 ### Customization Props
 
-All list components (`SortableList`, `SortableFlatList`, `DraggableList`) support:
+**`SortableList`** and **`SortableFlatList`**:
 
 | Prop | Description |
 |---|---|
-| `activeDragStyle` | Style for the source item while dragging (default: invisible) |
+| `dragEffect` | Scale effect on pickup: `"pickup"`, `"scaleUp"`, `"scaleDown"`, `"bounce"` |
 | `renderInsertIndicator` | Render a custom insertion indicator at the target index |
-| `dragEffect` | Scale effect for the overlay: `"pickup"`, `"scaleUp"`, `"scaleDown"`, `"bounce"` |
+| `activeDragStyle` | Style for the source item placeholder (SortableFlatList only) |
+| `handle` | When true, only a `DragHandle` child can start the drag |
 
-`Draggable` supports `activeDragStyle` (default: `{ opacity: 0.4 }`) and `dragEffect`.
+**`DraggableList`**:
 
-`Droppable` supports `activeStyle` and `activeEffect` for hover feedback.
+| Prop | Description |
+|---|---|
+| `dragEffect` | Scale effect on pickup |
+| `renderInsertIndicator` | Custom insertion indicator |
+| `activeDragStyle` | Style for the source item while dragging (default: invisible) |
+| `activeContainerStyle` | Style applied to the droppable container on hover |
+
+**`Draggable`**: supports `activeDragStyle` (default: `{ opacity: 0.4 }`) and `dragEffect`.
+
+**`Droppable`**: supports `activeStyle` and `activeEffect` for hover feedback.
 
 ### Drag Effects
 
-Scale animation presets applied to the drag overlay on pickup:
+Scale animation presets applied on pickup:
 
 | Preset | Scale | Feel |
 |---|---|---|
@@ -243,15 +278,15 @@ Pass as a string or custom config:
 
 ## Example App
 
-Run the demo app on your device with Expo Go:
+**[Try it now in Expo Go](https://expo.dev/preview/update?message=Demo%20app%20%E2%80%94%20drag%20%26%20drop%20examples&updateRuntimeVersion=1.0.0&createdAt=2026-03-20&slug=expo-dnd-example&projectId=cd6c8cd2-7c32-439a-a2f9-06e785c221d0&group=24d78f48-62a8-42fb-9b2a-47c855ddab8b)** — scan the QR code with Expo Go (iOS/Android) to try all 5 demos on your phone.
+
+Or run locally:
 
 ```bash
 cd example
 npm install
 npx expo start
 ```
-
-Scan the QR code with Expo Go (iOS/Android) to try all 5 demos on your phone.
 
 ## Platform Notes
 
