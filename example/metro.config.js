@@ -6,8 +6,8 @@ const libraryRoot = path.resolve(projectRoot, '..');
 
 const config = getDefaultConfig(projectRoot);
 
-// Watch ../src so Metro can resolve imports from the library source
-config.watchFolders = [path.resolve(libraryRoot, 'src')];
+// Watch ../dist so Metro can resolve imports from the built library
+config.watchFolders = [path.resolve(libraryRoot, 'dist')];
 
 // ONLY resolve from example/node_modules — never touch root node_modules
 config.resolver.nodeModulesPaths = [
