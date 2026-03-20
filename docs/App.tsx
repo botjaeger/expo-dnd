@@ -1353,6 +1353,7 @@ export default function App() {
           <View style={[hs.ctaRow, isNarrow && hs.ctaRowNarrow]}>
             <CtaButton primary label="Get Started" onPress={() => scrollTo(positionsRef.current.examples ?? 0)} />
             <CtaButton label="View on GitHub" href="https://github.com/botjaeger/expo-dnd" />
+            <CtaButton label="Try on Device" href="https://expo.dev/preview/update?message=Demo%20app%20%E2%80%94%20drag%20%26%20drop%20examples&updateRuntimeVersion=1.0.0&createdAt=2026-03-20&slug=expo-dnd-example&projectId=cd6c8cd2-7c32-439a-a2f9-06e785c221d0&group=24d78f48-62a8-42fb-9b2a-47c855ddab8b" />
           </View>
 
           <View style={hs.tags}>
