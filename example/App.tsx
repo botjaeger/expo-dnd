@@ -132,6 +132,7 @@ const SORT_ITEMS: SortItem[] = [
 
 function Demo2() {
   const [items, setItems] = useState(SORT_ITEMS);
+  const scrollLock = useScrollLock();
 
   return (
     <View style={s.demoWrap}>
@@ -139,6 +140,8 @@ function Demo2() {
         data={items}
         keyExtractor={(item) => item.id}
         direction="vertical"
+        onDragStart={scrollLock.onDragStart}
+        onDragEnd={scrollLock.onDragEnd}
         dragEffect="pickup"
         activeDragStyle={{ opacity: 0.3 }}
         renderItem={({ item, isDragging }) => (
@@ -252,11 +255,14 @@ const VAR_ITEMS: VarItem[] = [
 
 function Demo4() {
   const [items, setItems] = useState(VAR_ITEMS);
+  const scrollLock = useScrollLock();
 
   return (
     <View style={s.demoWrap}>
       <SortableList
         data={items}
+        onDragStart={scrollLock.onDragStart}
+        onDragEnd={scrollLock.onDragEnd}
         keyExtractor={(item) => item.id}
         direction="vertical"
         dragEffect="pickup"
@@ -359,11 +365,29 @@ function Demo5() {
   );
 }
 
+// ── Scroll lock context ──────────────────────────────────────────────────────
+const ScrollLockContext = React.createContext<{
+  lock: () => void;
+  unlock: () => void;
+}>({ lock: () => {}, unlock: () => {} });
+
+function useScrollLock() {
+  const ctx = React.useContext(ScrollLockContext);
+  return { onDragStart: ctx.lock, onDragEnd: ctx.unlock };
+}
+
 // ── Main App ─────────────────────────────────────────────────────────────────
 export default function App() {
   const [active, setActive] = useState<DemoName>('Drag & Drop');
+  const [scrollEnabled, setScrollEnabled] = useState(true);
+
+  const scrollLock = React.useMemo(() => ({
+    lock: () => setScrollEnabled(false),
+    unlock: () => setScrollEnabled(true),
+  }), []);
 
   return (
+    <ScrollLockContext.Provider value={scrollLock}>
     <GestureHandlerRootView style={s.root}>
       <StatusBar style="light" />
       <SafeAreaView style={s.safe}>
@@ -377,7 +401,7 @@ export default function App() {
             </TouchableOpacity>
           ))}
         </ScrollView>
-        <ScrollView style={s.content} contentContainerStyle={s.contentInner}>
+        <ScrollView style={s.content} contentContainerStyle={s.contentInner} scrollEnabled={scrollEnabled}>
           {active === 'Drag & Drop' && <Demo1 />}
           {active === 'Sortable' && <Demo2 />}
           {active === 'Cross-List' && <Demo3 />}
@@ -386,6 +410,7 @@ export default function App() {
         </ScrollView>
       </SafeAreaView>
     </GestureHandlerRootView>
+    </ScrollLockContext.Provider>
   );
 }
 
