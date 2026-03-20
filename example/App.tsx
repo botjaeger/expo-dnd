@@ -21,8 +21,8 @@ import {
   useDraggable,
   useDroppable,
   useDndContext,
-} from '@botjaeger/expo-dnd';
-import type { DragEndEvent, DropEvent } from '@botjaeger/expo-dnd';
+} from '../src';
+import type { DragEndEvent, DropEvent } from '../src';
 
 // ── Colors ───────────────────────────────────────────────────────────────────
 const C = {
