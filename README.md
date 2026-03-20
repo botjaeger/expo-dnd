@@ -7,7 +7,7 @@ Built on [Reanimated 3](https://docs.swmansion.com/react-native-reanimated/) and
 ## Install
 
 ```bash
-npm install expo-dnd
+npm install @botjaeger/expo-dnd
 ```
 
 **Peer dependencies** (must be installed separately):
@@ -28,8 +28,8 @@ npx expo install react-native-reanimated react-native-gesture-handler
 ### Basic Drag & Drop
 
 ```tsx
-import { DndProvider, Draggable, Droppable } from 'expo-dnd';
-import type { DragEndEvent } from 'expo-dnd';
+import { DndProvider, Draggable, Droppable } from '@botjaeger/expo-dnd';
+import type { DragEndEvent } from '@botjaeger/expo-dnd';
 
 function App() {
   const handleDragEnd = (event: DragEndEvent) => {
@@ -61,7 +61,7 @@ function App() {
 ### Sortable List
 
 ```tsx
-import { SortableList } from 'expo-dnd';
+import { SortableList } from '@botjaeger/expo-dnd';
 
 function App() {
   const [items, setItems] = useState(ITEMS);
@@ -89,8 +89,8 @@ No `itemSize` needed. SortableList auto-measures each item after render. Variabl
 ### Cross-List Transfer
 
 ```tsx
-import { DraggableListGroup, DraggableList } from 'expo-dnd';
-import type { DropEvent } from 'expo-dnd';
+import { DraggableListGroup, DraggableList } from '@botjaeger/expo-dnd';
+import type { DropEvent } from '@botjaeger/expo-dnd';
 
 function App() {
   const handleDrop = (event: DropEvent<Item>) => {
@@ -124,7 +124,7 @@ function App() {
 Build your own drag-and-drop from scratch:
 
 ```tsx
-import { DndProvider, useDraggable, useDroppable, useDndContext } from 'expo-dnd';
+import { DndProvider, useDraggable, useDroppable, useDndContext } from '@botjaeger/expo-dnd';
 import { GestureDetector } from 'react-native-gesture-handler';
 import Animated from 'react-native-reanimated';
 

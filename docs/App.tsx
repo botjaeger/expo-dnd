@@ -86,8 +86,8 @@ const TYP  = C.orange;  // TypeScript types
 
 // Demo 1 — Basic Drag & Drop ─────────────────────────────
 const BASIC_SETUP: readonly CodeLine[] = [
-  [["import ", KW], ["{ DndProvider, Draggable, Droppable }", undefined], [" from ", KW], ["'expo-dnd'", STR]],
-  [["import ", KW], ["type ", KW], ["{ DragEndEvent }", undefined], [" from ", KW], ["'expo-dnd'", STR]],
+  [["import ", KW], ["{ DndProvider, Draggable, Droppable }", undefined], [" from ", KW], ["'@botjaeger/expo-dnd'", STR]],
+  [["import ", KW], ["type ", KW], ["{ DragEndEvent }", undefined], [" from ", KW], ["'@botjaeger/expo-dnd'", STR]],
   [[""]],
   [["<", TAG], ["DndProvider", undefined], [" onDragEnd", PROP], ["={handleDragEnd}", undefined], [" dragEffect", PROP], ["=", undefined], ['"bounce"', STR], [">"]],
   [["  <", TAG], ["Draggable", undefined], [" id", PROP], ["=", undefined], ['"item-1"', STR], [" activeDragStyle", PROP], ["={{ opacity: 0.2 }}>"]],
@@ -123,8 +123,8 @@ const BASIC_CALLBACKS: readonly CodeLine[] = [
 const BASIC_FULL: readonly CodeLine[] = [
   [["import ", KW], ["{ useState }", undefined], [" from ", KW], ["'react'", STR]],
   [["import ", KW], ["{ View, Text }", undefined], [" from ", KW], ["'react-native'", STR]],
-  [["import ", KW], ["{ DndProvider, Draggable, Droppable }", undefined], [" from ", KW], ["'expo-dnd'", STR]],
-  [["import ", KW], ["type ", KW], ["{ DragEndEvent }", undefined], [" from ", KW], ["'expo-dnd'", STR]],
+  [["import ", KW], ["{ DndProvider, Draggable, Droppable }", undefined], [" from ", KW], ["'@botjaeger/expo-dnd'", STR]],
+  [["import ", KW], ["type ", KW], ["{ DragEndEvent }", undefined], [" from ", KW], ["'@botjaeger/expo-dnd'", STR]],
   [[""]],
   [["export ", KW], ["function ", KW], ["BasicExample() {"]],
   [["  ", undefined], ["const ", KW], ["[zone, setZone] = useState<", undefined], ["string | null", TYP], [">(", undefined], ["null", KW], [");"]],
@@ -152,7 +152,7 @@ const BASIC_FULL: readonly CodeLine[] = [
 
 // Demo 2 — Sortable List ─────────────────────────────────
 const SORT_SETUP: readonly CodeLine[] = [
-  [["import ", KW], ["{ SortableList }", undefined], [" from ", KW], ["'expo-dnd'", STR]],
+  [["import ", KW], ["{ SortableList }", undefined], [" from ", KW], ["'@botjaeger/expo-dnd'", STR]],
   [[""]],
   [["<", TAG], ["SortableList"]],
   [["  ", undefined], ["data", PROP], ["={items}"]],
@@ -186,7 +186,7 @@ const SORT_CALLBACKS: readonly CodeLine[] = [
 const SORT_FULL: readonly CodeLine[] = [
   [["import ", KW], ["{ useState }", undefined], [" from ", KW], ["'react'", STR]],
   [["import ", KW], ["{ View, Text }", undefined], [" from ", KW], ["'react-native'", STR]],
-  [["import ", KW], ["{ SortableList }", undefined], [" from ", KW], ["'expo-dnd'", STR]],
+  [["import ", KW], ["{ SortableList }", undefined], [" from ", KW], ["'@botjaeger/expo-dnd'", STR]],
   [[""]],
   [["const ", KW], ["ITEMS = ["]],
   [["  { id: ", undefined], ["'1'", STR], [", label: ", undefined], ["'Build UI'", STR], [" },"]],
@@ -220,8 +220,8 @@ const SORT_FULL: readonly CodeLine[] = [
 
 // Demo 3 — Cross-List Transfer ───────────────────────────
 const XLIST_SETUP: readonly CodeLine[] = [
-  [["import ", KW], ["{ DraggableListGroup, DraggableList }", undefined], [" from ", KW], ["'expo-dnd'", STR]],
-  [["import ", KW], ["type ", KW], ["{ DropEvent }", undefined], [" from ", KW], ["'expo-dnd'", STR]],
+  [["import ", KW], ["{ DraggableListGroup, DraggableList }", undefined], [" from ", KW], ["'@botjaeger/expo-dnd'", STR]],
+  [["import ", KW], ["type ", KW], ["{ DropEvent }", undefined], [" from ", KW], ["'@botjaeger/expo-dnd'", STR]],
   [[""]],
   [["<", TAG], ["DraggableListGroup", undefined], [" onDrop", PROP], ["={handleDrop}", undefined], [" dragEffect", PROP], ["=", undefined], ['"scaleUp"', STR], [">"]],
   [["  <", TAG], ["DraggableList"]],
@@ -257,8 +257,8 @@ const XLIST_CALLBACKS: readonly CodeLine[] = [
 const XLIST_FULL: readonly CodeLine[] = [
   [["import ", KW], ["{ useState }", undefined], [" from ", KW], ["'react'", STR]],
   [["import ", KW], ["{ View, Text }", undefined], [" from ", KW], ["'react-native'", STR]],
-  [["import ", KW], ["{ DraggableListGroup, DraggableList }", undefined], [" from ", KW], ["'expo-dnd'", STR]],
-  [["import ", KW], ["type ", KW], ["{ DropEvent }", undefined], [" from ", KW], ["'expo-dnd'", STR]],
+  [["import ", KW], ["{ DraggableListGroup, DraggableList }", undefined], [" from ", KW], ["'@botjaeger/expo-dnd'", STR]],
+  [["import ", KW], ["type ", KW], ["{ DropEvent }", undefined], [" from ", KW], ["'@botjaeger/expo-dnd'", STR]],
   [[""]],
   [["const ", KW], ["hoverStyle = { borderColor: ", undefined], ["'#3b82f6'", STR], [", borderWidth: 1 };"]],
   [[""]],
@@ -294,7 +294,7 @@ const XLIST_FULL: readonly CodeLine[] = [
 
 // Demo 4 — Variable Heights ──────────────────────────────
 const VARH_SETUP: readonly CodeLine[] = [
-  [["import ", KW], ["{ SortableList }", undefined], [" from ", KW], ["'expo-dnd'", STR]],
+  [["import ", KW], ["{ SortableList }", undefined], [" from ", KW], ["'@botjaeger/expo-dnd'", STR]],
   [[""]],
   [["// Items with different content lengths", CMT]],
   [["const ", KW], ["ITEMS = ["]],
@@ -330,7 +330,7 @@ const VARH_CALLBACKS: readonly CodeLine[] = [
 const VARH_FULL: readonly CodeLine[] = [
   [["import ", KW], ["{ useState }", undefined], [" from ", KW], ["'react'", STR]],
   [["import ", KW], ["{ View, Text }", undefined], [" from ", KW], ["'react-native'", STR]],
-  [["import ", KW], ["{ SortableList }", undefined], [" from ", KW], ["'expo-dnd'", STR]],
+  [["import ", KW], ["{ SortableList }", undefined], [" from ", KW], ["'@botjaeger/expo-dnd'", STR]],
   [[""]],
   [["const ", KW], ["ITEMS = ["]],
   [["  { id: ", undefined], ["'1'", STR], [", title: ", undefined], ["'Quick note'", STR], [" },"]],
@@ -363,7 +363,7 @@ const VARH_FULL: readonly CodeLine[] = [
 
 // Demo 5 — Custom Hooks ──────────────────────────────────
 const HOOKS_SETUP: readonly CodeLine[] = [
-  [["import ", KW], ["{ DndProvider, useDraggable, useDroppable, useDndContext }", undefined], [" from ", KW], ["'expo-dnd'", STR]],
+  [["import ", KW], ["{ DndProvider, useDraggable, useDroppable, useDndContext }", undefined], [" from ", KW], ["'@botjaeger/expo-dnd'", STR]],
   [[""]],
   [["function ", KW], ["CustomDraggable", TAG], ["({ id, children }) {"]],
   [["  ", undefined], ["const ", KW], ["ctx = useDndContext();"]],
@@ -408,8 +408,8 @@ const HOOKS_CALLBACKS: readonly CodeLine[] = [
 ];
 
 const HOOKS_FULL: readonly CodeLine[] = [
-  [["import ", KW], ["{ DndProvider, useDraggable, useDroppable, useDndContext }", undefined], [" from ", KW], ["'expo-dnd'", STR]],
-  [["import ", KW], ["type ", KW], ["{ DragEndEvent }", undefined], [" from ", KW], ["'expo-dnd'", STR]],
+  [["import ", KW], ["{ DndProvider, useDraggable, useDroppable, useDndContext }", undefined], [" from ", KW], ["'@botjaeger/expo-dnd'", STR]],
+  [["import ", KW], ["type ", KW], ["{ DragEndEvent }", undefined], [" from ", KW], ["'@botjaeger/expo-dnd'", STR]],
   [[""]],
   [["// Build your own draggable — full control over rendering", CMT]],
   [["function ", KW], ["MyDraggable({ id, children }) {"]],
@@ -1200,7 +1200,7 @@ function Nav({ isNarrow, ctx }: { isNarrow: boolean; ctx: ScrollCtx }) {
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={ns.navBtnFill}
-                  onPress={() => Linking.openURL('https://www.npmjs.com/package/expo-dnd')}
+                  onPress={() => Linking.openURL('https://www.npmjs.com/package/@botjaeger/expo-dnd')}
                   activeOpacity={0.7}
                 >
                   <Text style={ns.navBtnFillText}>npm</Text>
@@ -1221,7 +1221,7 @@ function Nav({ isNarrow, ctx }: { isNarrow: boolean; ctx: ScrollCtx }) {
             </TouchableOpacity>
             <TouchableOpacity
               style={ns.navBtnFill}
-              onPress={() => Linking.openURL('https://www.npmjs.com/package/expo-dnd')}
+              onPress={() => Linking.openURL('https://www.npmjs.com/package/@botjaeger/expo-dnd')}
               activeOpacity={0.7}
             >
               <Text style={ns.navBtnFillText}>npm</Text>
@@ -1346,7 +1346,7 @@ export default function App() {
           <View style={hs.installBlock}>
             <Text style={hs.installText}>
               <Text style={hs.installPrefix}>{'$ '}</Text>
-              npm install expo-dnd
+              npm install @botjaeger/expo-dnd
             </Text>
           </View>
 
@@ -1666,7 +1666,7 @@ export default function App() {
               <Text style={gs.footerLink}>GitHub</Text>
             </TouchableOpacity>
             <Text style={gs.footerSep}>{'\u00B7'}</Text>
-            <TouchableOpacity onPress={() => Linking.openURL('https://www.npmjs.com/package/expo-dnd')}>
+            <TouchableOpacity onPress={() => Linking.openURL('https://www.npmjs.com/package/@botjaeger/expo-dnd')}>
               <Text style={gs.footerLink}>npm</Text>
             </TouchableOpacity>
             <Text style={gs.footerSep}>{'\u00B7'}</Text>
