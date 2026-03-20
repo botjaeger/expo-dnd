@@ -1,5 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
+  Image,
   Linking,
   Platform,
   ScrollView,
@@ -86,8 +87,8 @@ const TYP  = C.orange;  // TypeScript types
 
 // Demo 1 — Basic Drag & Drop ─────────────────────────────
 const BASIC_SETUP: readonly CodeLine[] = [
-  [["import ", KW], ["{ DndProvider, Draggable, Droppable }", undefined], [" from ", KW], ["'expo-dnd'", STR]],
-  [["import ", KW], ["type ", KW], ["{ DragEndEvent }", undefined], [" from ", KW], ["'expo-dnd'", STR]],
+  [["import ", KW], ["{ DndProvider, Draggable, Droppable }", undefined], [" from ", KW], ["'@botjaeger/expo-dnd'", STR]],
+  [["import ", KW], ["type ", KW], ["{ DragEndEvent }", undefined], [" from ", KW], ["'@botjaeger/expo-dnd'", STR]],
   [[""]],
   [["<", TAG], ["DndProvider", undefined], [" onDragEnd", PROP], ["={handleDragEnd}", undefined], [" dragEffect", PROP], ["=", undefined], ['"bounce"', STR], [">"]],
   [["  <", TAG], ["Draggable", undefined], [" id", PROP], ["=", undefined], ['"item-1"', STR], [" activeDragStyle", PROP], ["={{ opacity: 0.2 }}>"]],
@@ -123,8 +124,8 @@ const BASIC_CALLBACKS: readonly CodeLine[] = [
 const BASIC_FULL: readonly CodeLine[] = [
   [["import ", KW], ["{ useState }", undefined], [" from ", KW], ["'react'", STR]],
   [["import ", KW], ["{ View, Text }", undefined], [" from ", KW], ["'react-native'", STR]],
-  [["import ", KW], ["{ DndProvider, Draggable, Droppable }", undefined], [" from ", KW], ["'expo-dnd'", STR]],
-  [["import ", KW], ["type ", KW], ["{ DragEndEvent }", undefined], [" from ", KW], ["'expo-dnd'", STR]],
+  [["import ", KW], ["{ DndProvider, Draggable, Droppable }", undefined], [" from ", KW], ["'@botjaeger/expo-dnd'", STR]],
+  [["import ", KW], ["type ", KW], ["{ DragEndEvent }", undefined], [" from ", KW], ["'@botjaeger/expo-dnd'", STR]],
   [[""]],
   [["export ", KW], ["function ", KW], ["BasicExample() {"]],
   [["  ", undefined], ["const ", KW], ["[zone, setZone] = useState<", undefined], ["string | null", TYP], [">(", undefined], ["null", KW], [");"]],
@@ -152,7 +153,7 @@ const BASIC_FULL: readonly CodeLine[] = [
 
 // Demo 2 — Sortable List ─────────────────────────────────
 const SORT_SETUP: readonly CodeLine[] = [
-  [["import ", KW], ["{ SortableList }", undefined], [" from ", KW], ["'expo-dnd'", STR]],
+  [["import ", KW], ["{ SortableList }", undefined], [" from ", KW], ["'@botjaeger/expo-dnd'", STR]],
   [[""]],
   [["<", TAG], ["SortableList"]],
   [["  ", undefined], ["data", PROP], ["={items}"]],
@@ -186,7 +187,7 @@ const SORT_CALLBACKS: readonly CodeLine[] = [
 const SORT_FULL: readonly CodeLine[] = [
   [["import ", KW], ["{ useState }", undefined], [" from ", KW], ["'react'", STR]],
   [["import ", KW], ["{ View, Text }", undefined], [" from ", KW], ["'react-native'", STR]],
-  [["import ", KW], ["{ SortableList }", undefined], [" from ", KW], ["'expo-dnd'", STR]],
+  [["import ", KW], ["{ SortableList }", undefined], [" from ", KW], ["'@botjaeger/expo-dnd'", STR]],
   [[""]],
   [["const ", KW], ["ITEMS = ["]],
   [["  { id: ", undefined], ["'1'", STR], [", label: ", undefined], ["'Build UI'", STR], [" },"]],
@@ -220,8 +221,8 @@ const SORT_FULL: readonly CodeLine[] = [
 
 // Demo 3 — Cross-List Transfer ───────────────────────────
 const XLIST_SETUP: readonly CodeLine[] = [
-  [["import ", KW], ["{ DraggableListGroup, DraggableList }", undefined], [" from ", KW], ["'expo-dnd'", STR]],
-  [["import ", KW], ["type ", KW], ["{ DropEvent }", undefined], [" from ", KW], ["'expo-dnd'", STR]],
+  [["import ", KW], ["{ DraggableListGroup, DraggableList }", undefined], [" from ", KW], ["'@botjaeger/expo-dnd'", STR]],
+  [["import ", KW], ["type ", KW], ["{ DropEvent }", undefined], [" from ", KW], ["'@botjaeger/expo-dnd'", STR]],
   [[""]],
   [["<", TAG], ["DraggableListGroup", undefined], [" onDrop", PROP], ["={handleDrop}", undefined], [" dragEffect", PROP], ["=", undefined], ['"scaleUp"', STR], [">"]],
   [["  <", TAG], ["DraggableList"]],
@@ -257,8 +258,8 @@ const XLIST_CALLBACKS: readonly CodeLine[] = [
 const XLIST_FULL: readonly CodeLine[] = [
   [["import ", KW], ["{ useState }", undefined], [" from ", KW], ["'react'", STR]],
   [["import ", KW], ["{ View, Text }", undefined], [" from ", KW], ["'react-native'", STR]],
-  [["import ", KW], ["{ DraggableListGroup, DraggableList }", undefined], [" from ", KW], ["'expo-dnd'", STR]],
-  [["import ", KW], ["type ", KW], ["{ DropEvent }", undefined], [" from ", KW], ["'expo-dnd'", STR]],
+  [["import ", KW], ["{ DraggableListGroup, DraggableList }", undefined], [" from ", KW], ["'@botjaeger/expo-dnd'", STR]],
+  [["import ", KW], ["type ", KW], ["{ DropEvent }", undefined], [" from ", KW], ["'@botjaeger/expo-dnd'", STR]],
   [[""]],
   [["const ", KW], ["hoverStyle = { borderColor: ", undefined], ["'#3b82f6'", STR], [", borderWidth: 1 };"]],
   [[""]],
@@ -294,7 +295,7 @@ const XLIST_FULL: readonly CodeLine[] = [
 
 // Demo 4 — Variable Heights ──────────────────────────────
 const VARH_SETUP: readonly CodeLine[] = [
-  [["import ", KW], ["{ SortableList }", undefined], [" from ", KW], ["'expo-dnd'", STR]],
+  [["import ", KW], ["{ SortableList }", undefined], [" from ", KW], ["'@botjaeger/expo-dnd'", STR]],
   [[""]],
   [["// Items with different content lengths", CMT]],
   [["const ", KW], ["ITEMS = ["]],
@@ -330,7 +331,7 @@ const VARH_CALLBACKS: readonly CodeLine[] = [
 const VARH_FULL: readonly CodeLine[] = [
   [["import ", KW], ["{ useState }", undefined], [" from ", KW], ["'react'", STR]],
   [["import ", KW], ["{ View, Text }", undefined], [" from ", KW], ["'react-native'", STR]],
-  [["import ", KW], ["{ SortableList }", undefined], [" from ", KW], ["'expo-dnd'", STR]],
+  [["import ", KW], ["{ SortableList }", undefined], [" from ", KW], ["'@botjaeger/expo-dnd'", STR]],
   [[""]],
   [["const ", KW], ["ITEMS = ["]],
   [["  { id: ", undefined], ["'1'", STR], [", title: ", undefined], ["'Quick note'", STR], [" },"]],
@@ -363,7 +364,7 @@ const VARH_FULL: readonly CodeLine[] = [
 
 // Demo 5 — Custom Hooks ──────────────────────────────────
 const HOOKS_SETUP: readonly CodeLine[] = [
-  [["import ", KW], ["{ DndProvider, useDraggable, useDroppable, useDndContext }", undefined], [" from ", KW], ["'expo-dnd'", STR]],
+  [["import ", KW], ["{ DndProvider, useDraggable, useDroppable, useDndContext }", undefined], [" from ", KW], ["'@botjaeger/expo-dnd'", STR]],
   [[""]],
   [["function ", KW], ["CustomDraggable", TAG], ["({ id, children }) {"]],
   [["  ", undefined], ["const ", KW], ["ctx = useDndContext();"]],
@@ -408,8 +409,8 @@ const HOOKS_CALLBACKS: readonly CodeLine[] = [
 ];
 
 const HOOKS_FULL: readonly CodeLine[] = [
-  [["import ", KW], ["{ DndProvider, useDraggable, useDroppable, useDndContext }", undefined], [" from ", KW], ["'expo-dnd'", STR]],
-  [["import ", KW], ["type ", KW], ["{ DragEndEvent }", undefined], [" from ", KW], ["'expo-dnd'", STR]],
+  [["import ", KW], ["{ DndProvider, useDraggable, useDroppable, useDndContext }", undefined], [" from ", KW], ["'@botjaeger/expo-dnd'", STR]],
+  [["import ", KW], ["type ", KW], ["{ DragEndEvent }", undefined], [" from ", KW], ["'@botjaeger/expo-dnd'", STR]],
   [[""]],
   [["// Build your own draggable — full control over rendering", CMT]],
   [["function ", KW], ["MyDraggable({ id, children }) {"]],
@@ -1200,7 +1201,7 @@ function Nav({ isNarrow, ctx }: { isNarrow: boolean; ctx: ScrollCtx }) {
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={ns.navBtnFill}
-                  onPress={() => Linking.openURL('https://www.npmjs.com/package/expo-dnd')}
+                  onPress={() => Linking.openURL('https://www.npmjs.com/package/@botjaeger/expo-dnd')}
                   activeOpacity={0.7}
                 >
                   <Text style={ns.navBtnFillText}>npm</Text>
@@ -1221,7 +1222,7 @@ function Nav({ isNarrow, ctx }: { isNarrow: boolean; ctx: ScrollCtx }) {
             </TouchableOpacity>
             <TouchableOpacity
               style={ns.navBtnFill}
-              onPress={() => Linking.openURL('https://www.npmjs.com/package/expo-dnd')}
+              onPress={() => Linking.openURL('https://www.npmjs.com/package/@botjaeger/expo-dnd')}
               activeOpacity={0.7}
             >
               <Text style={ns.navBtnFillText}>npm</Text>
@@ -1346,13 +1347,54 @@ export default function App() {
           <View style={hs.installBlock}>
             <Text style={hs.installText}>
               <Text style={hs.installPrefix}>{'$ '}</Text>
-              npm install expo-dnd
+              npx expo install @botjaeger/expo-dnd
             </Text>
           </View>
+
+          <Text style={hs.prereqLabel}>Prerequisites</Text>
+          <View style={hs.installBlock}>
+            <Text style={hs.installText}>
+              <Text style={hs.installPrefix}>{'$ '}</Text>
+              npx expo install react-native-reanimated react-native-gesture-handler react-native-worklets
+            </Text>
+          </View>
+          <Text style={hs.prereqNote}>
+            Reanimated 4+ uses{' '}
+            <Text style={hs.qrLink} onPress={() => Linking.openURL('https://docs.swmansion.com/react-native-worklets/docs')}>
+              react-native-worklets
+            </Text>
+            . Add the Babel plugin to your config:
+          </Text>
+          <View style={hs.installBlock}>
+            <Text style={hs.installText}>
+              plugins: [<Text style={hs.installHighlight}>'react-native-worklets/plugin'</Text>]
+            </Text>
+          </View>
+          <Text style={hs.prereqNote}>
+            Expo SDK 54+ includes the plugin automatically via babel-preset-expo.
+            {'\n'}Reanimated 3.x users: use <Text style={hs.installHighlight}>'react-native-reanimated/plugin'</Text> instead.
+          </Text>
 
           <View style={[hs.ctaRow, isNarrow && hs.ctaRowNarrow]}>
             <CtaButton primary label="Get Started" onPress={() => scrollTo(positionsRef.current.examples ?? 0)} />
             <CtaButton label="View on GitHub" href="https://github.com/botjaeger/expo-dnd" />
+          </View>
+
+          <View style={hs.qrBlock}>
+            <Image source={require('./assets/expo-go-qr.png')} style={hs.qrImage} />
+            <View style={hs.qrInfo}>
+              <Text style={hs.qrTitle}>Try on device</Text>
+              <Text style={hs.qrDesc}>
+                Scan with{' '}
+                <Text
+                  style={hs.qrLink}
+                  onPress={() => Linking.openURL('https://expo.dev/go')}
+                >
+                  Expo Go
+                </Text>
+                {' '}to run the example app on your phone.
+              </Text>
+            </View>
           </View>
 
           <View style={hs.tags}>
@@ -1666,7 +1708,7 @@ export default function App() {
               <Text style={gs.footerLink}>GitHub</Text>
             </TouchableOpacity>
             <Text style={gs.footerSep}>{'\u00B7'}</Text>
-            <TouchableOpacity onPress={() => Linking.openURL('https://www.npmjs.com/package/expo-dnd')}>
+            <TouchableOpacity onPress={() => Linking.openURL('https://www.npmjs.com/package/@botjaeger/expo-dnd')}>
               <Text style={gs.footerLink}>npm</Text>
             </TouchableOpacity>
             <Text style={gs.footerSep}>{'\u00B7'}</Text>
@@ -1876,8 +1918,57 @@ const hs = StyleSheet.create({
   },
   installText: { fontFamily: 'monospace', fontSize: 14, color: C.text },
   installPrefix: { color: C.dim },
-  ctaRow: { flexDirection: 'row', gap: 12, marginBottom: 32 },
+  installHighlight: { color: C.accent },
+  prereqLabel: {
+    fontFamily: 'monospace',
+    fontSize: 11,
+    fontWeight: '600',
+    color: C.dim,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: 10,
+  },
+  prereqNote: {
+    fontFamily: 'monospace',
+    fontSize: 12,
+    color: C.muted,
+    lineHeight: 20,
+    marginBottom: 16,
+    maxWidth: 520,
+  },
+  ctaRow: { flexDirection: 'row', gap: 12, marginBottom: 24 },
   ctaRowNarrow: { flexDirection: 'column' },
+  qrBlock: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    backgroundColor: C.surface,
+    borderWidth: 1,
+    borderColor: C.border,
+    borderRadius: 10,
+    padding: 16,
+    marginBottom: 32,
+    alignSelf: 'flex-start',
+  },
+  qrImage: { width: 100, height: 100, borderRadius: 6 },
+  qrInfo: { flexShrink: 1 },
+  qrTitle: {
+    fontFamily: 'monospace',
+    fontSize: 13,
+    fontWeight: '700',
+    color: C.text,
+    marginBottom: 6,
+  },
+  qrDesc: {
+    fontFamily: 'monospace',
+    fontSize: 12,
+    color: C.muted,
+    lineHeight: 18,
+  },
+  qrLink: {
+    color: C.accent,
+    textDecorationLine: 'underline',
+  },
   ctaBtn: {
     paddingHorizontal: 20,
     paddingVertical: 12,
