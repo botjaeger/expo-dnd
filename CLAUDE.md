@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-expo-dnd is a cross-platform drag-and-drop library for React Native/Expo supporting iOS, Android, and Web. v0.1.0, not yet published.
+expo-dnd is a cross-platform drag-and-drop library for React Native/Expo supporting iOS, Android, and Web. Published as `@botjaeger/expo-dnd` on npm.
 
 ## Repository Structure
 
@@ -99,6 +99,36 @@ Peer dependencies (must be installed by consumer):
 - `react-native` (>=0.72.0)
 - `react-native-reanimated` (>=3.0.0)
 - `react-native-gesture-handler` (>=2.10.0)
+
+## Git Workflow
+
+**Direct pushes to `main` are not allowed.** All changes go through pull requests.
+
+### Branch → PR → Squash Merge
+
+1. Create a feature branch: `git checkout -b feat/haptic-feedback`
+2. Make commits with any messages during development
+3. Open a PR against `main`
+4. Squash merge with a **conventional commit message** as the merge title
+
+### Commit Convention (determines version bump)
+
+| Prefix | Bump | Example |
+|---|---|---|
+| `fix:` or `fix(scope):` | patch (0.1.0 → 0.1.1) | `fix: overlay clipping in ScrollView` |
+| `feat:` or `feat(scope):` | minor (0.1.0 → 0.2.0) | `feat: add haptic feedback on drop` |
+| `feat!:` or `BREAKING CHANGE` | major (0.1.0 → 1.0.0) | `feat!: rename SortableList props` |
+| `docs:`, `ci:`, `chore:`, `refactor:` | no publish | `docs: update README examples` |
+
+### CI Pipeline
+
+On every push to `main` (via squash merge):
+1. **Type check** — `npm run typecheck`
+2. **Build** — `npm run build` (CJS + ESM + DTS)
+3. **Version bump** — auto-increments `package.json` based on commit prefix
+4. **Publish** — auto-publishes to npm with git tag (e.g. `v0.2.0`)
+
+Non-publishing prefixes (`docs:`, `ci:`, `chore:`, etc.) still run CI but skip the publish step.
 
 ## Testing
 
