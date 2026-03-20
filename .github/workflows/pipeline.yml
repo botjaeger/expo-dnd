@@ -127,10 +127,9 @@ jobs:
       - name: Publish update
         if: steps.changes.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
         run: |
-          cd example && eas update \
-            --branch preview \
-            --message "${MSG:-Manual update}" \
-            --platform ios --platform android
+          cd example
+          eas update --branch preview --message "${MSG:-Manual update}" --platform android
+          eas update --branch preview --message "${MSG:-Manual update}" --platform ios
         env:
           MSG: ${{ github.event.head_commit.message }}
           CI: '1'
