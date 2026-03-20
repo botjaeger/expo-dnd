@@ -1,5 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
+  Image,
   Linking,
   Platform,
   ScrollView,
@@ -1355,6 +1356,23 @@ export default function App() {
             <CtaButton label="View on GitHub" href="https://github.com/botjaeger/expo-dnd" />
           </View>
 
+          <View style={hs.qrBlock}>
+            <Image source={require('./assets/expo-go-qr.png')} style={hs.qrImage} />
+            <View style={hs.qrInfo}>
+              <Text style={hs.qrTitle}>Try on device</Text>
+              <Text style={hs.qrDesc}>
+                Scan with{' '}
+                <Text
+                  style={hs.qrLink}
+                  onPress={() => Linking.openURL('https://expo.dev/go')}
+                >
+                  Expo Go
+                </Text>
+                {' '}to run the example app on your phone.
+              </Text>
+            </View>
+          </View>
+
           <View style={hs.tags}>
             {['Reanimated 3+', 'Gesture Handler 2+', 'Web', 'TypeScript', 'Sortable', 'Cross-list'].map((tag) => (
               <View key={tag} style={hs.tag}>
@@ -1876,8 +1894,39 @@ const hs = StyleSheet.create({
   },
   installText: { fontFamily: 'monospace', fontSize: 14, color: C.text },
   installPrefix: { color: C.dim },
-  ctaRow: { flexDirection: 'row', gap: 12, marginBottom: 32 },
+  ctaRow: { flexDirection: 'row', gap: 12, marginBottom: 24 },
   ctaRowNarrow: { flexDirection: 'column' },
+  qrBlock: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    backgroundColor: C.surface,
+    borderWidth: 1,
+    borderColor: C.border,
+    borderRadius: 10,
+    padding: 16,
+    marginBottom: 32,
+    alignSelf: 'flex-start',
+  },
+  qrImage: { width: 100, height: 100, borderRadius: 6 },
+  qrInfo: { flexShrink: 1 },
+  qrTitle: {
+    fontFamily: 'monospace',
+    fontSize: 13,
+    fontWeight: '700',
+    color: C.text,
+    marginBottom: 6,
+  },
+  qrDesc: {
+    fontFamily: 'monospace',
+    fontSize: 12,
+    color: C.muted,
+    lineHeight: 18,
+  },
+  qrLink: {
+    color: C.accent,
+    textDecorationLine: 'underline',
+  },
   ctaBtn: {
     paddingHorizontal: 20,
     paddingVertical: 12,
