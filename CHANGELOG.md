@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/botjaeger/expo-dnd/compare/v0.3.0...v0.3.1) (2026-03-20)
+
+
+### Bug Fixes
+
+* handle empty commit message in EAS update workflow ([#11](https://github.com/botjaeger/expo-dnd/issues/11)) ([0bab798](https://github.com/botjaeger/expo-dnd/commit/0bab798d9384325bed137d41727de52baab2b9a6))
+
 ## [0.3.0](https://github.com/botjaeger/expo-dnd/compare/v0.2.0...v0.3.0) (2026-03-20)
 
 
