@@ -35,4 +35,6 @@ jobs:
         run: cd example && npm install
 
       - name: Publish update
-        run: cd example && eas update --branch preview --message "${{ github.event.head_commit.message }}" --non-interactive
+        run: cd example && eas update --branch preview --message "${MSG:-Manual update}" --non-interactive
+        env:
+          MSG: ${{ github.event.head_commit.message }}
