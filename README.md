@@ -192,6 +192,19 @@ function App() {
 
 Note: `DraggableList` requires `itemSize` (unlike `SortableList` which auto-measures).
 
+### Auto-Measuring Cross-List Transfer
+
+Use `AutoDraggableList` instead of `DraggableList` when item heights vary — it auto-measures like `SortableList`:
+
+```tsx
+import { DraggableListGroup, AutoDraggableList } from '@botjaeger/expo-dnd';
+
+<DraggableListGroup onDrop={handleDrop}>
+  <AutoDraggableList id="todo" data={todoItems} keyExtractor={(item) => item.id} renderItem={renderItem} direction="vertical" />
+  <AutoDraggableList id="done" data={doneItems} keyExtractor={(item) => item.id} renderItem={renderItem} direction="vertical" />
+</DraggableListGroup>
+```
+
 ### Custom Hooks
 
 Build your own drag-and-drop from scratch:
@@ -243,11 +256,12 @@ function MyDropZone({ id, children }) {
 |---|---|
 | `DndProvider` | Wraps your tree to enable drag and drop |
 | `Draggable` | Makes children draggable with long-press activation |
-| `DragHandle` | Restricts drag initiation to a specific child element |
+| `DragHandle` | Restricts drag to a specific child. Parent must have `handle` prop. |
 | `Droppable` | Creates a drop zone with hover feedback |
 | `SortableList` | Auto-measuring sortable list (no `itemSize` needed) |
 | `SortableFlatList` | FlatList-backed sortable for large datasets (requires `itemSize`) |
 | `DraggableList` | Single list for cross-list drag and drop (requires `itemSize`) |
+| `AutoDraggableList` | Auto-measuring version of DraggableList (no `itemSize` needed) |
 | `DraggableListGroup` | Coordinates transfers across multiple DraggableLists |
 
 ### Hooks
@@ -281,6 +295,47 @@ function MyDropZone({ id, children }) {
 **`Draggable`**: supports `activeDragStyle` (default: `{ opacity: 0.4 }`) and `dragEffect`.
 
 **`Droppable`**: supports `activeStyle` and `activeEffect` for hover feedback.
+
+**`DndProvider`**:
+
+| Prop | Description |
+|---|---|
+| `style` | Custom style for the provider container |
+
+### Interaction Props
+
+All list components (`SortableList`, `SortableFlatList`, `DraggableList`, `AutoDraggableList`) support:
+
+| Prop | Description |
+|---|---|
+| `onItemPress` | Called on tap/click (not after drag). Receives `(item, index)`. |
+| `longPressDuration` | Milliseconds before drag activates (default: 200) |
+
+`Draggable` and `useDraggable` support:
+
+| Prop | Description |
+|---|---|
+| `onPress` | Called on tap/click (not after drag) |
+| `longPressDuration` | Milliseconds before drag activates (default: 200) |
+
+### Drag Handles
+
+Use `DragHandle` to restrict dragging to a specific area. The parent `Draggable` (or list component) must have `handle` set to `true`:
+
+```tsx
+<SortableList handle renderItem={({ item }) => (
+  <View style={styles.row}>
+    <DragHandle>
+      <View style={styles.grip}>
+        <Text>⠿</Text>
+      </View>
+    </DragHandle>
+    <Text>{item.label}</Text>
+  </View>
+)} />
+```
+
+Without the `handle` prop on the parent, `DragHandle` renders passively with no drag behavior.
 
 ### Drag Effects
 
@@ -334,6 +389,19 @@ npx expo start
 - **iOS/Android**: Native gesture handling via Reanimated worklets
 - **Web**: Uses `getBoundingClientRect()` for layout, left-click only, handles scroll offset compensation
 - All platforms: Long-press (200ms) to activate drag
+
+### Reduced Motion
+
+The library respects the device's reduced motion preference when configured:
+
+```tsx
+import { setReducedMotion } from '@botjaeger/expo-dnd';
+
+// Call at app startup
+setReducedMotion(true); // All animations become instant (duration: 0)
+```
+
+Use `isReducedMotion()` to check the current state.
 
 ## License
 

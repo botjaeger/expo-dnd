@@ -83,14 +83,14 @@ export function useDroppable(props: UseDroppableProps): UseDroppableReturn {
     }
   );
 
-  // Animated style: only applies the optional scale effect.
-  // Visual hover feedback (border, background) is intentionally omitted here —
-  // consumers should apply their own styling via the `activeStyle` prop on <Droppable>.
+  // Animated style: subtle opacity hint on hover plus optional scale effect.
+  // Consumers can override visual feedback via the `activeStyle` prop on <Droppable>.
   const activeStyle = useAnimatedStyle(() => {
     return {
+      opacity: isOver.value ? 0.85 : 1,
       transform: [{ scale: dropScale.value }],
     };
-  }, [dropScale]);
+  }, [isOver, dropScale]);
 
   return {
     ref,

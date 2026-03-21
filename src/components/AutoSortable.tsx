@@ -19,7 +19,7 @@ export interface AutoSortableProps<T> {
   keyExtractor: (item: T) => string;
   /** Container size - if provided, enables scroll mode with auto-scroll */
   containerSize?: number;
-  /** Horizontal or vertical orientation (default: 'horizontal') */
+  /** Horizontal or vertical orientation (default: 'vertical') */
   direction?: 'horizontal' | 'vertical';
   /** Distance from edge to trigger auto-scroll (default: 80). Only used in scroll mode. */
   autoScrollThreshold?: number;
@@ -59,7 +59,7 @@ export function AutoSortable<T>({
   renderItem,
   onReorder,
   keyExtractor,
-  direction = 'horizontal',
+  direction = 'vertical',
   style,
   ...rest
 }: AutoSortableProps<T>) {

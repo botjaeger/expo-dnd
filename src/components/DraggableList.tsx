@@ -98,8 +98,6 @@ export interface DraggableListGroupProps<T> {
   onDrop: (event: DropEvent<T>) => void;
   /** Animation effect applied to the drag overlay when picked up */
   dragEffect?: import('../animations/dragEffects').DragEffect | import('../animations/dragEffects').DragEffectConfig;
-  /** Long press duration in ms before drag activates (default: 200) */
-  longPressDuration?: number;
 }
 
 interface DraggableListItemRendererProps<T> {

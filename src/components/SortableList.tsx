@@ -447,7 +447,7 @@ export function SortableList<T>({
   keyExtractor,
   itemSize,
   containerSize,
-  direction = 'horizontal',
+  direction = 'vertical',
   autoScrollThreshold = AUTO_SCROLL_THRESHOLD,
   style,
   handle,

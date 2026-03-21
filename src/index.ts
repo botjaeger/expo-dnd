@@ -17,13 +17,14 @@ export { useDndContext } from './context/useDndContext';
 
 // Types
 export type {
+  ActiveDragState,
+  DndContextValue,
   DndProviderProps,
-  DragStartEvent,
+  DragEndEvent,
   DragMoveEvent,
   DragOverEvent,
-  DragEndEvent,
+  DragStartEvent,
   LayoutRect,
-  ActiveDragState,
 } from './context/types';
 
 // Collision
