@@ -62,18 +62,87 @@ const INIT_DONE: KanbanCard[] = [
   { id: 'k9', title: 'Publish to npm', tag: { label: 'Release', color: C.green } },
 ];
 
-// ── Card renderer ────────────────────────────────────────────────────────────
-const renderCard = ({ item, isDragging }: { item: KanbanCard; isDragging: boolean }) => (
-  <View style={[s.card, isDragging && s.cardDragging]}>
-    {item.tag && (
-      <View style={[s.tag, { backgroundColor: item.tag.color + '18', borderColor: item.tag.color + '40' }]}>
-        <Text style={[s.tagText, { color: item.tag.color }]}>{item.tag.label}</Text>
+// ── Edit Card Form ───────────────────────────────────────────────────────────
+function EditCardForm({ card, onSave, onDelete, onCancel }: {
+  card: KanbanCard;
+  onSave: (updated: KanbanCard) => void;
+  onDelete: () => void;
+  onCancel: () => void;
+}) {
+  const [tagIdx, setTagIdx] = useState(() =>
+    TAG_PRESETS.findIndex(t => t.label === card.tag?.label) ?? 0
+  );
+  const [title, setTitle] = useState(card.title);
+  const [desc, setDesc] = useState(card.desc ?? '');
+
+  const handleSave = () => {
+    if (!title.trim()) return;
+    onSave({
+      ...card,
+      title: title.trim(),
+      desc: desc.trim() || undefined,
+      tag: TAG_PRESETS[tagIdx],
+    });
+  };
+
+  return (
+    <View style={s.addForm}>
+      <Text style={s.addFormTitle}>Edit Card</Text>
+
+      <Text style={s.addLabel}>Type</Text>
+      <View style={s.addOptions}>
+        {TAG_PRESETS.map((tag, i) => (
+          <TouchableOpacity
+            key={tag.label}
+            style={[s.addOption, tagIdx === i && { borderColor: tag.color, backgroundColor: tag.color + '18' }]}
+            onPress={() => setTagIdx(i)}
+            activeOpacity={0.7}
+          >
+            <Text style={[s.addOptionText, tagIdx === i && { color: tag.color }]}>{tag.label}</Text>
+          </TouchableOpacity>
+        ))}
       </View>
-    )}
-    <Text style={s.cardTitle}>{item.title}</Text>
-    {item.desc && <Text style={s.cardDesc}>{item.desc}</Text>}
-  </View>
-);
+
+      <Text style={s.addLabel}>Title</Text>
+      <TextInput
+        style={s.addInput}
+        value={title}
+        onChangeText={setTitle}
+        placeholder="Card title"
+        placeholderTextColor={C.dim}
+      />
+
+      <Text style={s.addLabel}>Description (optional)</Text>
+      <TextInput
+        style={[s.addInput, s.addInputMulti]}
+        value={desc}
+        onChangeText={setDesc}
+        placeholder="Brief description"
+        placeholderTextColor={C.dim}
+        multiline
+        numberOfLines={2}
+      />
+
+      <View style={s.addActions}>
+        <TouchableOpacity style={s.deleteBtn} onPress={onDelete} activeOpacity={0.7}>
+          <Text style={s.deleteText}>Delete</Text>
+        </TouchableOpacity>
+        <View style={s.addActionsSpacer} />
+        <TouchableOpacity style={s.addCancelBtn} onPress={onCancel} activeOpacity={0.7}>
+          <Text style={s.addCancelText}>Cancel</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[s.addSubmitBtn, !title.trim() && s.addSubmitBtnDisabled]}
+          onPress={handleSave}
+          activeOpacity={0.7}
+          disabled={!title.trim()}
+        >
+          <Text style={s.addSubmitText}>Save</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
 
 // ── Insertion indicator ──────────────────────────────────────────────────────
 const renderInsertIndicator = () => (
@@ -259,6 +328,45 @@ export function KanbanDemo({ onBack }: { onBack: () => void }) {
   }, []);
 
   const [showAddForm, setShowAddForm] = useState(false);
+  const [editingCard, setEditingCard] = useState<{ card: KanbanCard; columnId: ColumnId } | null>(null);
+
+  const handleTapCard = useCallback((card: KanbanCard) => {
+    // Find which column this card is in
+    if (todo.find(c => c.id === card.id)) setEditingCard({ card, columnId: 'todo' });
+    else if (progress.find(c => c.id === card.id)) setEditingCard({ card, columnId: 'progress' });
+    else if (done.find(c => c.id === card.id)) setEditingCard({ card, columnId: 'done' });
+  }, [todo, progress, done]);
+
+  const handleSaveCard = useCallback((updated: KanbanCard) => {
+    if (!editingCard) return;
+    const list = getList(editingCard.columnId).map(c => c.id === updated.id ? updated : c);
+    setList(editingCard.columnId, list);
+    setEditingCard(null);
+  }, [editingCard, getList, setList]);
+
+  const handleDeleteCard = useCallback(() => {
+    if (!editingCard) return;
+    setList(editingCard.columnId, getList(editingCard.columnId).filter(c => c.id !== editingCard.card.id));
+    setEditingCard(null);
+  }, [editingCard, getList, setList]);
+
+  const renderCard = useCallback(({ item, isDragging }: { item: KanbanCard; isDragging: boolean }) => (
+    <TouchableOpacity
+      onPress={() => handleTapCard(item)}
+      activeOpacity={0.8}
+      delayLongPress={200}
+    >
+      <View style={[s.card, isDragging && s.cardDragging]}>
+        {item.tag && (
+          <View style={[s.tag, { backgroundColor: item.tag.color + '18', borderColor: item.tag.color + '40' }]}>
+            <Text style={[s.tagText, { color: item.tag.color }]}>{item.tag.label}</Text>
+          </View>
+        )}
+        <Text style={s.cardTitle}>{item.title}</Text>
+        {item.desc && <Text style={s.cardDesc}>{item.desc}</Text>}
+      </View>
+    </TouchableOpacity>
+  ), [handleTapCard]);
 
   const handleAddCard = useCallback((column: ColumnId, card: KanbanCard) => {
     const list = [...getList(column), card];
@@ -293,6 +401,17 @@ export function KanbanDemo({ onBack }: { onBack: () => void }) {
       {showAddForm && (
         <View style={s.addFormWrap}>
           <AddCardForm onAdd={handleAddCard} onCancel={() => setShowAddForm(false)} />
+        </View>
+      )}
+
+      {editingCard && (
+        <View style={s.addFormWrap}>
+          <EditCardForm
+            card={editingCard.card}
+            onSave={handleSaveCard}
+            onDelete={handleDeleteCard}
+            onCancel={() => setEditingCard(null)}
+          />
         </View>
       )}
 
@@ -604,6 +723,23 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'flex-end',
     gap: 8,
+  },
+  deleteBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: C.red + '40',
+    minHeight: 44,
+    justifyContent: 'center',
+  },
+  deleteText: {
+    fontFamily: 'monospace',
+    fontSize: 12,
+    color: C.red,
+  },
+  addActionsSpacer: {
+    flex: 1,
   },
   addCancelBtn: {
     paddingHorizontal: 16,
