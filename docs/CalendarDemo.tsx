@@ -31,6 +31,7 @@ interface CalEvent {
   date: string; // YYYY-MM-DD
   time: string; // e.g. "6:50am"
   title: string;
+  desc?: string;
 }
 
 type ViewMode = 'month' | 'week' | 'day';
@@ -83,21 +84,21 @@ function makeId() {
 }
 
 const SEED_EVENTS: CalEvent[] = [
-  { id: 'e1',  color: '#3b82f6', date: '2026-03-02', time: '9:00am',  title: 'Sprint planning' },
+  { id: 'e1',  color: '#3b82f6', date: '2026-03-02', time: '9:00am',  title: 'Sprint planning', desc: 'Review backlog, assign stories, estimate effort for the week.' },
   { id: 'e2',  color: '#22c55e', date: '2026-03-02', time: '11:00am', title: 'Code review' },
-  { id: 'e3',  color: '#f97316', date: '2026-03-03', time: '2:00pm',  title: 'Submit expense report' },
+  { id: 'e3',  color: '#f97316', date: '2026-03-03', time: '2:00pm',  title: 'Submit expense report', desc: 'March travel receipts and conference fees.' },
   { id: 'e4',  color: '#3b82f6', date: '2026-03-04', time: '10:00am', title: 'Design sync' },
-  { id: 'e5',  color: '#8b5cf6', date: '2026-03-05', time: '12:30pm', title: 'Lunch with Alex' },
-  { id: 'e6',  color: '#22c55e', date: '2026-03-09', time: '9:30am',  title: 'Write unit tests' },
-  { id: 'e7',  color: '#3b82f6', date: '2026-03-10', time: '3:00pm',  title: 'Client demo' },
+  { id: 'e5',  color: '#8b5cf6', date: '2026-03-05', time: '12:30pm', title: 'Lunch with Alex', desc: 'Catch up on the new project timeline.' },
+  { id: 'e6',  color: '#22c55e', date: '2026-03-09', time: '9:30am',  title: 'Write unit tests', desc: 'Cover the sortable list reorder logic and edge cases.' },
+  { id: 'e7',  color: '#3b82f6', date: '2026-03-10', time: '3:00pm',  title: 'Client demo', desc: 'Show drag-and-drop features to the product team.' },
   { id: 'e8',  color: '#14b8a6', date: '2026-03-11', time: '6:50am',  title: 'Flight to Taipei' },
   { id: 'e9',  color: '#f97316', date: '2026-03-12', time: '8:00am',  title: 'Weekly report due' },
   { id: 'e10', color: '#22c55e', date: '2026-03-16', time: '1:00pm',  title: 'Deploy to staging' },
-  { id: 'e11', color: '#3b82f6', date: '2026-03-17', time: '10:30am', title: 'Retro meeting' },
+  { id: 'e11', color: '#3b82f6', date: '2026-03-17', time: '10:30am', title: 'Retro meeting', desc: 'Discuss what went well and what to improve.' },
   { id: 'e12', color: '#8b5cf6', date: '2026-03-20', time: '6:00pm',  title: 'Gym session' },
-  { id: 'e13', color: '#14b8a6', date: '2026-03-21', time: '11:00am', title: 'Documentation update' },
+  { id: 'e13', color: '#14b8a6', date: '2026-03-21', time: '11:00am', title: 'Documentation update', desc: 'Update API reference and add migration guide for v0.4.' },
   { id: 'e14', color: '#ef4444', date: '2026-03-24', time: '9:00am',  title: 'Morning run' },
-  { id: 'e15', color: '#3b82f6', date: '2026-03-25', time: '2:00pm',  title: 'Q2 planning' },
+  { id: 'e15', color: '#3b82f6', date: '2026-03-25', time: '2:00pm',  title: 'Q2 planning', desc: 'Roadmap review with engineering leads. Bring OKR drafts.' },
   { id: 'e16', color: '#f97316', date: '2026-03-28', time: '5:00pm',  title: 'Prep for next sprint' },
 ];
 
@@ -145,6 +146,7 @@ function EventForm({
   onSubmit: (ev: CalEvent) => void;
 }) {
   const [title, setTitle] = useState(initial?.title ?? '');
+  const [desc, setDesc] = useState(initial?.desc ?? '');
   const [date, setDate] = useState(initial?.date ?? defaultDate);
   const [time, setTime] = useState(initial?.time ?? '9:00am');
   const [color, setColor] = useState(initial?.color ?? '#3b82f6');
@@ -154,6 +156,7 @@ function EventForm({
     onSubmit({
       color,
       date,
+      desc: desc.trim() || undefined,
       id: initial?.id ?? makeId(),
       time: time.trim() || '9:00am',
       title: title.trim(),
@@ -171,6 +174,17 @@ function EventForm({
         onChangeText={setTitle}
         placeholder="Event title"
         placeholderTextColor={C.dim}
+      />
+
+      <Text style={s.formLabel}>Description (optional)</Text>
+      <TextInput
+        style={[s.formInput, s.formInputMulti]}
+        value={desc}
+        onChangeText={setDesc}
+        placeholder="Add details"
+        placeholderTextColor={C.dim}
+        multiline
+        numberOfLines={2}
       />
 
       <Text style={s.formLabel}>Date</Text>
@@ -404,9 +418,15 @@ function WeekView({
   const days = weekDays(weekDate);
   const today = toYMD(new Date());
 
-  const renderItem = useCallback(
+  const renderWeekItem = useCallback(
     ({ item, isDragging }: { item: CalEvent; isDragging: boolean }) => (
-      <EventBar event={item} isDragging={isDragging} onPress={() => onEditEvent(item)} />
+      <TouchableOpacity onPress={() => onEditEvent(item)} activeOpacity={0.8}>
+        <View style={[s.weekCard, { borderLeftColor: item.color }, isDragging && s.eventBarDragging]}>
+          <Text style={s.weekCardTime}>{item.time}</Text>
+          <Text style={s.weekCardTitle} numberOfLines={1}>{item.title}</Text>
+          {item.desc ? <Text style={s.weekCardDesc} numberOfLines={2}>{item.desc}</Text> : null}
+        </View>
+      </TouchableOpacity>
     ),
     [onEditEvent]
   );
@@ -446,12 +466,11 @@ function WeekView({
                   id={ymd}
                   data={dayEvs}
                   keyExtractor={(item) => item.id}
-                  itemSize={28}
                   direction="vertical"
                   activeDragStyle={{ opacity: 0.3 }}
                   activeContainerStyle={activeContainerStyle}
                   renderInsertIndicator={renderInsertIndicator}
-                  renderItem={renderItem}
+                  renderItem={renderWeekItem}
                 />
                 <TouchableOpacity
                   style={s.weekAddBtn}
@@ -1091,6 +1110,32 @@ const s = StyleSheet.create({
     padding: 6,
     minHeight: 200,
   },
+  weekCard: {
+    backgroundColor: C.surfaceHigh,
+    borderRadius: 6,
+    borderLeftWidth: 3,
+    padding: 8,
+    marginBottom: 6,
+  },
+  weekCardTime: {
+    fontFamily: 'monospace',
+    fontSize: 9,
+    color: C.dim,
+    marginBottom: 2,
+  },
+  weekCardTitle: {
+    fontFamily: 'monospace',
+    fontSize: 11,
+    fontWeight: '600',
+    color: C.text,
+  },
+  weekCardDesc: {
+    fontFamily: 'monospace',
+    fontSize: 10,
+    color: C.muted,
+    marginTop: 3,
+    lineHeight: 14,
+  },
   weekAddBtn: {
     marginTop: 6,
     paddingVertical: 3,
@@ -1165,6 +1210,10 @@ const s = StyleSheet.create({
     fontSize: 13,
     color: C.text,
     minHeight: 40,
+  },
+  formInputMulti: {
+    minHeight: 60,
+    textAlignVertical: 'top',
   },
   colorRow: {
     flexDirection: 'row',
