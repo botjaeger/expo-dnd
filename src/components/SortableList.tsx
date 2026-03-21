@@ -78,11 +78,12 @@ interface SortableItemProps<T> {
   onDragStart: (id: string, index: number) => void;
   onDragMove: (id: string, overIndex: number, position: number) => void;
   onDragEnd: (id: string, fromIndex: number, toIndex: number) => void;
-  // Phase 0 spike: DndContext shared values for cross-system visibility
+  // DndContext bridge — auto-populated when SortableList is inside a DndProvider
   dndActiveId?: SharedValue<string | null>;
   dndIsDragging?: SharedValue<boolean>;
   dndAbsoluteX?: SharedValue<number>;
   dndAbsoluteY?: SharedValue<number>;
+  dndOverId?: SharedValue<string | null>;
   dndRunCollision?: (activeId: string, absoluteX: number, absoluteY: number) => void;
 }
 
@@ -116,6 +117,7 @@ function SortableItemInner<T>({
   dndIsDragging,
   dndAbsoluteX,
   dndAbsoluteY,
+  dndOverId,
   dndRunCollision,
 }: SortableItemProps<T>) {
   const isActive = useSharedValue(false);
@@ -201,7 +203,7 @@ function SortableItemInner<T>({
       animatedPosition.value = pixelPos;
       dragEndFired.value = false;
 
-      // Phase 0 spike: write to DndContext so external droppables see this drag
+      // Write to DndContext bridge so external droppables see this drag
       if (dndActiveId) dndActiveId.value = itemId;
       if (dndIsDragging) dndIsDragging.value = true;
 
@@ -241,7 +243,7 @@ function SortableItemInner<T>({
         touchPosition.value = isHorizontal ? event.absoluteX : event.absoluteY;
       }
 
-      // Phase 0 spike: update DndContext pointer position + run collision
+      // Update DndContext bridge pointer position + run collision
       if (dndAbsoluteX) dndAbsoluteX.value = event.absoluteX;
       if (dndAbsoluteY) dndAbsoluteY.value = event.absoluteY;
       if (dndRunCollision) {
@@ -270,11 +272,12 @@ function SortableItemInner<T>({
       activeId.value = null;
       isDragging.value = false;
 
-      // Phase 0 spike: reset DndContext
+      // Reset DndContext bridge
       if (dndActiveId) dndActiveId.value = null;
       if (dndIsDragging) dndIsDragging.value = false;
       if (dndAbsoluteX) dndAbsoluteX.value = 0;
       if (dndAbsoluteY) dndAbsoluteY.value = 0;
+      if (dndOverId) dndOverId.value = null;
 
       // Animate to final position, then fire callback
       animatedPosition.value = withTiming(finalPos, TIMING_CONFIG, () => {
@@ -304,11 +307,12 @@ function SortableItemInner<T>({
         activeId.value = null;
         isDragging.value = false;
 
-        // Phase 0 spike: reset DndContext
+        // Reset DndContext bridge
         if (dndActiveId) dndActiveId.value = null;
         if (dndIsDragging) dndIsDragging.value = false;
         if (dndAbsoluteX) dndAbsoluteX.value = 0;
         if (dndAbsoluteY) dndAbsoluteY.value = 0;
+        if (dndOverId) dndOverId.value = null;
 
         animatedPosition.value = withTiming(targetPos, TIMING_CONFIG);
       } else if (!success) {
@@ -483,7 +487,7 @@ export function SortableList<T>({
   const flatStyle = StyleSheet.flatten(style) as any;
   const gap = (isHoriz ? flatStyle?.columnGap : flatStyle?.rowGap) ?? flatStyle?.gap ?? 0;
 
-  // Phase 0 spike: access DndContext if available (optional — SortableList can work without DndProvider)
+  // Optional bridge to DndContext — SortableList works without a DndProvider
   const dndCtx = useContext(DndContext);
 
   const {
@@ -559,6 +563,7 @@ export function SortableList<T>({
       dndIsDragging={dndCtx?.isDragging}
       dndAbsoluteX={dndCtx?.absoluteX}
       dndAbsoluteY={dndCtx?.absoluteY}
+      dndOverId={dndCtx?.overId}
       dndRunCollision={dndCtx?.runCollisionDetection}
     />
   ));

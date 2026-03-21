@@ -233,38 +233,27 @@ function Demo2() {
         title="Sortable List"
         desc="Long-press to reorder. Items animate into place with spring physics."
       />
-      <DndProvider>
-        <SortableList
-          data={items}
-          keyExtractor={(item) => item.id}
-          direction="vertical"
-          dragEffect={effect === 'none' ? undefined : effect}
-          activeDragStyle={{ opacity: 0.3 }}
-          renderInsertIndicator={renderInsertIndicator}
-          renderItem={({ item, isDragging }) => (
-            <View style={[s.sortRow, isDragging && { opacity: 0.4 }]}>
-              <Text style={s.grip}>{'\u2807'}</Text>
-              <Text style={s.sortLabel}>{item.label}</Text>
-            </View>
-          )}
-          onReorder={(data, event) => {
-            setItems(data);
-            setLog(prev =>
-              `Moved "${data[event.toIndex].label}" ${event.fromIndex} → ${event.toIndex}` +
-              (prev ? '\n' + prev : '')
-            );
-          }}
-        />
-        <Droppable id="spike-zone" activeEffect="bounce">
-          {({ isOver }) => (
-            <View style={[s.zone, { marginTop: 12 }]}>
-              <Text style={s.zoneLabel}>
-                {isOver ? 'SORTABLE ITEM DETECTED!' : 'Spike: drag sortable item here'}
-              </Text>
-            </View>
-          )}
-        </Droppable>
-      </DndProvider>
+      <SortableList
+        data={items}
+        keyExtractor={(item) => item.id}
+        direction="vertical"
+        dragEffect={effect === 'none' ? undefined : effect}
+        activeDragStyle={{ opacity: 0.3 }}
+        renderInsertIndicator={renderInsertIndicator}
+        renderItem={({ item, isDragging }) => (
+          <View style={[s.sortRow, isDragging && { opacity: 0.4 }]}>
+            <Text style={s.grip}>{'\u2807'}</Text>
+            <Text style={s.sortLabel}>{item.label}</Text>
+          </View>
+        )}
+        onReorder={(data, event) => {
+          setItems(data);
+          setLog(prev =>
+            `Moved "${data[event.toIndex].label}" ${event.fromIndex} → ${event.toIndex}` +
+            (prev ? '\n' + prev : '')
+          );
+        }}
+      />
       <OptionPicker label="dragEffect" options={DRAG_EFFECTS} value={effect} onChange={setEffect} />
       <EventLog log={log} placeholder="// long-press to reorder — onReorder fires" />
       <ResetButton onPress={() => { setItems(SORT_ITEMS); setLog(''); }} />
