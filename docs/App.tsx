@@ -42,9 +42,12 @@ const C = {
   surface: '#141414',
   border: '#262626',
   text: '#fafafa',
+  textInverse: '#ffffff',
   muted: '#a1a1aa',
-  dim: '#525252',
+  dim: '#6b6b6b',
   accent: '#3b82f6',
+  accentBg: 'rgba(59, 130, 246, 0.06)',
+  accentBgHover: 'rgba(59, 130, 246, 0.1)',
   teal: '#14b8a6',
   purple: '#8b5cf6',
   green: '#22c55e',
@@ -736,7 +739,7 @@ const INITIAL_DONE: TaskItem[] = [
 const activeContainerStyle = {
   borderWidth: 1,
   borderColor: C.accent,
-  backgroundColor: 'rgba(59, 130, 246, 0.06)',
+  backgroundColor: C.accentBg,
   borderRadius: 6,
 };
 
@@ -1990,7 +1993,7 @@ const hs = StyleSheet.create({
   ctaBtnPrimary: { backgroundColor: C.accent },
   ctaBtnSecondary: { backgroundColor: C.surface, borderWidth: 1, borderColor: C.border },
   ctaBtnText: { fontSize: 14, fontWeight: '600' },
-  ctaBtnTextPrimary: { color: '#ffffff' },
+  ctaBtnTextPrimary: { color: C.textInverse },
   ctaBtnTextSecondary: { color: C.text },
   tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   tag: {
@@ -2174,7 +2177,7 @@ const cs = StyleSheet.create({
   demo1ZoneActive: {
     borderWidth: 1,
     borderColor: C.accent,
-    backgroundColor: 'rgba(59, 130, 246, 0.06)',
+    backgroundColor: C.accentBg,
   },
   demo1ZoneLabel: {
     fontFamily: 'monospace',
@@ -2448,7 +2451,7 @@ const cs = StyleSheet.create({
   },
   effectBtnActive: {
     borderColor: C.accent,
-    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+    backgroundColor: C.accentBgHover,
   },
   effectBtnText: {
     fontFamily: 'monospace',
