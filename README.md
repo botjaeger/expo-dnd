@@ -28,13 +28,15 @@ Most React Native drag-and-drop libraries are either unmaintained, web-first por
 
 The API covers the full spectrum — from dropping items onto zones to reordering sortable lists to transferring items across multiple lists — with **one consistent pattern**. Add `itemSize` for fixed layouts, or skip it and let the library auto-measure. It just works.
 
+- **Unified architecture** — sortable items are both draggable and droppable. `SortableList` bridges to `DndContext` automatically when inside a `DndProvider`, enabling cross-list transfers without extra wrapper components.
+
 ## Features
 
 - **60fps UI-Thread Animations** – All gesture handling and animations run on the UI thread via Reanimated worklets. No JS bridge round-trips during drag.
 - **Fabric & New Architecture** – Tested on Fabric with iOS and Android. In-place sortable animations avoid the Fabric gesture cancellation issue.
 - **Works with Expo** – Compatible with Expo managed workflow. Requires peer dependencies (Reanimated + Gesture Handler) installed separately.
 - **Auto-Measuring Sortable Lists** – `SortableList` measures item heights automatically. Variable heights work without configuration.
-- **Cross-List Transfers** – `DraggableListGroup` + `DraggableList` enables drag between multiple lists with insertion indicators.
+- **Cross-List Transfers** – Place multiple `SortableList`s under one `DndProvider` and handle `onExternalDrop` on each list. No extra wrapper component needed.
 - **Collision Detection** – Center-point check against droppables, with intersection ratio fallback (10% threshold). Smallest-area preference for overlapping zones.
 - **Auto-Scroll** – Edge-triggered scroll in scroll-mode lists. Gated by item boundary crossing to prevent false triggers.
 - **Drag Effects** – Scale presets (`pickup`, `scaleUp`, `scaleDown`, `bounce`) with spring physics, or pass a custom `{ scale, spring }` config.
@@ -158,39 +160,48 @@ No `itemSize` needed. SortableList auto-measures each item after render. Variabl
 ### Cross-List Transfer
 
 ```tsx
-import { DraggableListGroup, DraggableList } from '@botjaeger/expo-dnd';
-import type { DropEvent } from '@botjaeger/expo-dnd';
+import { DndProvider, SortableList } from '@botjaeger/expo-dnd';
 
 function App() {
-  const handleDrop = (event: DropEvent<Item>) => {
-    const { item, fromListId, fromIndex, toListId, toIndex } = event;
-    // Move item between lists
-  };
+  const [todo, setTodo] = useState(TODO_ITEMS);
+  const [done, setDone] = useState(DONE_ITEMS);
 
   return (
-    <DraggableListGroup onDrop={handleDrop} dragEffect="scaleUp">
-      <DraggableList
+    <DndProvider>
+      <SortableList
         id="todo"
-        data={todoItems}
+        data={todo}
         keyExtractor={(item) => item.id}
-        itemSize={40}
         direction="vertical"
         renderItem={renderItem}
+        onReorder={(data) => setTodo(data)}
+        onExternalDrop={({ activeId, insertIndex }) => {
+          const item = done.find(i => i.id === activeId);
+          if (!item) return;
+          setDone(prev => prev.filter(i => i.id !== activeId));
+          setTodo(prev => [...prev.slice(0, insertIndex), item, ...prev.slice(insertIndex)]);
+        }}
       />
-      <DraggableList
+      <SortableList
         id="done"
-        data={doneItems}
+        data={done}
         keyExtractor={(item) => item.id}
-        itemSize={40}
         direction="vertical"
         renderItem={renderItem}
+        onReorder={(data) => setDone(data)}
+        onExternalDrop={({ activeId, insertIndex }) => {
+          const item = todo.find(i => i.id === activeId);
+          if (!item) return;
+          setTodo(prev => prev.filter(i => i.id !== activeId));
+          setDone(prev => [...prev.slice(0, insertIndex), item, ...prev.slice(insertIndex)]);
+        }}
       />
-    </DraggableListGroup>
+    </DndProvider>
   );
 }
 ```
 
-Note: `DraggableList` requires `itemSize` (unlike `SortableList` which auto-measures).
+Place multiple `SortableList`s under one `DndProvider`. Each list handles `onExternalDrop` for incoming items. No `itemSize` needed — heights are auto-measured.
 
 ### Custom Hooks
 
@@ -245,10 +256,10 @@ function MyDropZone({ id, children }) {
 | `Draggable` | Makes children draggable with long-press activation |
 | `DragHandle` | Restricts drag initiation to a specific child element |
 | `Droppable` | Creates a drop zone with hover feedback |
-| `SortableList` | Auto-measuring sortable list (no `itemSize` needed) |
+| `SortableList` | Auto-measuring sortable list. Supports cross-list transfers via `onExternalDrop` when inside a `DndProvider` |
 | `SortableFlatList` | FlatList-backed sortable for large datasets (requires `itemSize`) |
-| `DraggableList` | Single list for cross-list drag and drop (requires `itemSize`) |
-| `DraggableListGroup` | Coordinates transfers across multiple DraggableLists |
+| `DraggableList` | Single list for cross-list drag and drop (requires `itemSize`) (legacy) |
+| `DraggableListGroup` | Coordinates transfers across multiple DraggableLists (legacy) |
 
 ### Hooks
 
@@ -265,6 +276,7 @@ function MyDropZone({ id, children }) {
 | Prop | Description |
 |---|---|
 | `dragEffect` | Scale effect on pickup: `"pickup"`, `"scaleUp"`, `"scaleDown"`, `"bounce"` |
+| `onExternalDrop` | Called when an external item is dropped onto this list. Receives `{ activeId, data, insertIndex }`. Only fires when inside a `DndProvider`. |
 | `renderInsertIndicator` | Render a custom insertion indicator at the target index |
 | `activeDragStyle` | Style for the source item placeholder (SortableFlatList only) |
 | `handle` | When true, only a `DragHandle` child can start the drag |

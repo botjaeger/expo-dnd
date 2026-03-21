@@ -18,15 +18,13 @@ import {
   Draggable,
   Droppable,
   SortableList,
-  DraggableListGroup,
-  DraggableList,
   useDraggable,
   useDroppable,
   useDndContext,
 } from '../src';
 import { GestureDetector } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle } from 'react-native-reanimated';
-import type { DragEndEvent, DropEvent } from '../src';
+import type { DragEndEvent } from '../src';
 
 // ── Scroll context — shared between Nav, Sidebar, and App ────────────────────
 // We store Y positions of sections so nav/sidebar links can scroll to them.
@@ -221,74 +219,62 @@ const SORT_FULL: readonly CodeLine[] = [
 
 // Demo 3 — Cross-List Transfer ───────────────────────────
 const XLIST_SETUP: readonly CodeLine[] = [
-  [["import ", KW], ["{ DraggableListGroup, DraggableList }", undefined], [" from ", KW], ["'@botjaeger/expo-dnd'", STR]],
-  [["import ", KW], ["type ", KW], ["{ DropEvent }", undefined], [" from ", KW], ["'@botjaeger/expo-dnd'", STR]],
+  [["import ", KW], ["{ DndProvider, SortableList }", undefined], [" from ", KW], ["'@botjaeger/expo-dnd'", STR]],
   [[""]],
-  [["<", TAG], ["DraggableListGroup", undefined], [" onDrop", PROP], ["={handleDrop}", undefined], [" dragEffect", PROP], ["=", undefined], ['"scaleUp"', STR], [">"]],
-  [["  <", TAG], ["DraggableList"]],
+  [["<", TAG], ["DndProvider", undefined], [">"]],
+  [["  <", TAG], ["SortableList"]],
   [["    ", undefined], ["id", PROP], ["=", undefined], ['"todo"', STR]],
-  [["    ", undefined], ["data", PROP], ["={todoItems}"]],
+  [["    ", undefined], ["data", PROP], ["={todo}"]],
   [["    ", undefined], ["keyExtractor", PROP], ["={(item) => item.id}"]],
-  [["    ", undefined], ["itemSize", PROP], ["={40}"]],
-  [["    ", undefined], ["containerSize", PROP], ["={400}"]],
-  [["    ", undefined], ["activeDragStyle", PROP], ["={{ opacity: 0.3 }}"]],
-  [["    ", undefined], ["activeContainerStyle", PROP], ["={hoverStyle}"]],
-  [["    ", undefined], ["renderInsertIndicator", PROP], ["={renderIndicator}"]],
+  [["    ", undefined], ["direction", PROP], ["=", undefined], ['"vertical"', STR]],
   [["    ", undefined], ["renderItem", PROP], ["={renderItem}"]],
+  [["    ", undefined], ["onReorder", PROP], ["={(data) => setTodo(data)}"]],
+  [["    ", undefined], ["onExternalDrop", PROP], ["={handleExternalDropTodo}"]],
   [["  />"]],
-  [["  <", TAG], ["DraggableList", undefined], [" id", PROP], ["=", undefined], ['"done"', STR], [" ", undefined], ["...", CMT], [" />"]],
-  [["</", TAG], ["DraggableListGroup", undefined], [">"]],
+  [["  <", TAG], ["SortableList", undefined], [" id", PROP], ["=", undefined], ['"done"', STR], [" ", undefined], ["...", CMT], [" />"]],
+  [["</", TAG], ["DndProvider", undefined], [">"]],
 ];
 
 const XLIST_CALLBACKS: readonly CodeLine[] = [
-  [["const ", KW], ["handleDrop = (", undefined], ["event", undefined], [": ", undefined], ["DropEvent", TYP], ["<", undefined], ["Task", TYP], [">) => {"]],
-  [["  ", undefined], ["const ", KW], ["{ item, fromListId, fromIndex, toListId, toIndex } = event;"]],
-  [[""]],
-  [["  ", undefined], ["if ", KW], ["(fromListId === toListId) {"]],
-  [["    ", undefined], ["// same-list reorder", CMT]],
-  [["    reorder(fromListId, fromIndex, toIndex);"]],
-  [["  } ", undefined], ["else ", KW], ["{"]],
-  [["    ", undefined], ["// cross-list transfer", CMT]],
-  [["    removeFrom(fromListId, fromIndex);"]],
-  [["    insertInto(toListId, toIndex, item);"]],
-  [["  }"]],
+  [["// onExternalDrop fires when an item from another list lands here", CMT]],
+  [["const ", KW], ["handleExternalDropTodo = ({ activeId, insertIndex }) => {"]],
+  [["  ", undefined], ["const ", KW], ["item = done.find(i => i.id === activeId);"]],
+  [["  ", undefined], ["if ", KW], ["(!item) ", KW], ["return", KW], [";"]],
+  [["  setDone(prev => prev.filter(i => i.id !== activeId));"]],
+  [["  setTodo(prev => {"]],
+  [["    ", undefined], ["const ", KW], ["next = [...prev];"]],
+  [["    next.splice(insertIndex, 0, item);"]],
+  [["    ", undefined], ["return ", KW], ["next;"]],
+  [["  });"]],
   [["};"]],
 ];
 
 const XLIST_FULL: readonly CodeLine[] = [
-  [["import ", KW], ["{ useState }", undefined], [" from ", KW], ["'react'", STR]],
+  [["import ", KW], ["{ useState, useCallback }", undefined], [" from ", KW], ["'react'", STR]],
   [["import ", KW], ["{ View, Text }", undefined], [" from ", KW], ["'react-native'", STR]],
-  [["import ", KW], ["{ DraggableListGroup, DraggableList }", undefined], [" from ", KW], ["'@botjaeger/expo-dnd'", STR]],
-  [["import ", KW], ["type ", KW], ["{ DropEvent }", undefined], [" from ", KW], ["'@botjaeger/expo-dnd'", STR]],
-  [[""]],
-  [["const ", KW], ["hoverStyle = { borderColor: ", undefined], ["'#3b82f6'", STR], [", borderWidth: 1 };"]],
+  [["import ", KW], ["{ DndProvider, SortableList }", undefined], [" from ", KW], ["'@botjaeger/expo-dnd'", STR]],
   [[""]],
   [["export ", KW], ["function ", KW], ["KanbanBoard() {"]],
   [["  ", undefined], ["const ", KW], ["[todo, setTodo] = useState(INITIAL_TODO);"]],
   [["  ", undefined], ["const ", KW], ["[done, setDone] = useState(INITIAL_DONE);"]],
   [[""]],
-  [["  ", undefined], ["const ", KW], ["handleDrop = (", undefined], ["e", undefined], [": ", undefined], ["DropEvent", TYP], ["<", undefined], ["Task", TYP], [">) => {"]],
-  [["    ", undefined], ["if ", KW], ["(e.fromListId !== e.toListId) {"]],
-  [["      setTodo(p => p.filter(i => i.id !== e.item.id));"]],
-  [["      setDone(p => [...p.slice(0, e.toIndex), e.item, ...p.slice(e.toIndex)]);"]],
-  [["    }"]],
-  [["  };"]],
-  [[""]],
   [["  ", undefined], ["return ", KW], ["("]],
-  [["    <", TAG], ["DraggableListGroup", undefined], [" onDrop", PROP], ["={handleDrop}", undefined], [" dragEffect", PROP], ["=", undefined], ['"scaleUp"', STR], [">"]],
-  [["      <", TAG], ["DraggableList"]],
+  [["    <", TAG], ["DndProvider", undefined], [">"]],
+  [["      <", TAG], ["SortableList"]],
   [["        ", undefined], ["id", PROP], ["=", undefined], ['"todo"', STR], [" ", undefined], ["data", PROP], ["={todo}"]],
   [["        ", undefined], ["keyExtractor", PROP], ["={(i) => i.id}"]],
-  [["        ", undefined], ["itemSize", PROP], ["={40}", undefined], [" ", undefined], ["containerSize", PROP], ["={400}"]],
-  [["        ", undefined], ["activeDragStyle", PROP], ["={{ opacity: 0.3 }}"]],
-  [["        ", undefined], ["activeContainerStyle", PROP], ["={hoverStyle}"]],
-  [["        ", undefined], ["renderInsertIndicator", PROP], ["={(idx) => <", undefined], ["Indicator", TAG], [" index={idx} />}"]],
-  [["        ", undefined], ["renderItem", PROP], ["={({ item }) => ("]],
-  [["          <", TAG], ["Text", undefined], [">{item.label}</", TAG], ["Text", undefined], [">"]],
-  [["        )}"]],
+  [["        ", undefined], ["direction", PROP], ["=", undefined], ['"vertical"', STR]],
+  [["        ", undefined], ["renderItem", PROP], ["={renderItem}"]],
+  [["        ", undefined], ["onReorder", PROP], ["={(data) => setTodo(data)}"]],
+  [["        ", undefined], ["onExternalDrop", PROP], ["={({ activeId, insertIndex }) => {"]],
+  [["          ", undefined], ["const ", KW], ["item = done.find(i => i.id === activeId);"]],
+  [["          ", undefined], ["if ", KW], ["(!item) ", KW], ["return", KW], [";"]],
+  [["          setDone(p => p.filter(i => i.id !== activeId));"]],
+  [["          setTodo(p => [...p.slice(0, insertIndex), item, ...p.slice(insertIndex)]);"]],
+  [["        }}"]],
   [["      />"]],
-  [["      <", TAG], ["DraggableList", undefined], [" id", PROP], ["=", undefined], ['"done"', STR], [" ", undefined], ["data", PROP], ["={done}", undefined], [" ", undefined], ["...", CMT], [" />"]],
-  [["    </", TAG], ["DraggableListGroup", undefined], [">"]],
+  [["      <", TAG], ["SortableList", undefined], [" id", PROP], ["=", undefined], ['"done"', STR], [" ", undefined], ["data", PROP], ["={done}", undefined], [" ", undefined], ["...", CMT], [" />"]],
+  [["    </", TAG], ["DndProvider", undefined], [">"]],
   [["  );"]],
   [["}"]],
 ];
@@ -733,15 +719,6 @@ const INITIAL_DONE: TaskItem[] = [
   { id: 'd8', label: 'Code review' },
 ];
 
-const activeContainerStyle = {
-  borderWidth: 1,
-  borderColor: C.accent,
-  backgroundColor: 'rgba(59, 130, 246, 0.06)',
-  borderRadius: 6,
-};
-
-const activeDragStyle = { opacity: 0.3 };
-
 const renderInsertIndicator = (index: number) => (
   <View style={cs.xInsertBar}>
     <View style={cs.xInsertDot} />
@@ -758,26 +735,6 @@ function Demo3Panel({ isNarrow }: { isNarrow: boolean }) {
   const [status, setStatus] = useState('');
   const [effect, setEffect] = useState<DragEffectOption>('scaleUp');
 
-  const handleDrop = useCallback((event: DropEvent<TaskItem>) => {
-    const { item, fromListId, fromIndex, toListId, toIndex } = event;
-    if (fromListId === toListId) {
-      const setter = fromListId === 'todo' ? setTodo : setDone;
-      setter((prev) => {
-        const next = [...prev];
-        next.splice(fromIndex, 1);
-        next.splice(toIndex, 0, item);
-        return next;
-      });
-      setStatus(prev => `Reordered in ${fromListId}` + (prev ? '\n' + prev : ''));
-    } else {
-      (fromListId === 'todo' ? setTodo : setDone)((prev) => prev.filter((i) => i.id !== item.id));
-      (toListId === 'todo' ? setTodo : setDone)((prev) => [
-        ...prev.slice(0, toIndex), item, ...prev.slice(toIndex),
-      ]);
-      setStatus(prev => `Moved "${item.label}" → ${toListId}` + (prev ? '\n' + prev : ''));
-    }
-  }, []);
-
   const renderItem = useCallback(
     ({ item, isDragging }: { item: TaskItem; isDragging: boolean }) => (
       <View style={[cs.xItem, isDragging && { opacity: 0.4 }]}>
@@ -788,47 +745,70 @@ function Demo3Panel({ isNarrow }: { isNarrow: boolean }) {
 
   return (
     <View style={cs.demoContent}>
-      <DraggableListGroup onDrop={handleDrop} dragEffect={effect === 'none' ? undefined : effect}>
+      <DndProvider>
         <View style={[cs.xCols, isNarrow && cs.xColsNarrow]}>
           <View style={cs.xCol}>
-            <Text style={cs.xColTitle}>To Do <Text style={cs.xColBadge}>fixed 400px</Text></Text>
-            <DraggableList
+            <Text style={cs.xColTitle}>To Do</Text>
+            <SortableList
               id="todo"
               data={todo}
               keyExtractor={(item) => item.id}
-              itemSize={40}
-              containerSize={400}
               direction="vertical"
+              dragEffect={effect === 'none' ? undefined : effect}
               renderItem={renderItem}
-              activeContainerStyle={activeContainerStyle}
-              activeDragStyle={activeDragStyle}
               renderInsertIndicator={renderInsertIndicator}
-
+              onReorder={(data) => {
+                setTodo(data);
+                setStatus(prev => 'Reordered To Do' + (prev ? '\n' + prev : ''));
+              }}
+              onExternalDrop={({ activeId, insertIndex }) => {
+                const item = done.find(i => i.id === activeId);
+                if (!item) return;
+                setDone(prev => prev.filter(i => i.id !== activeId));
+                setTodo(prev => {
+                  const next = [...prev];
+                  next.splice(insertIndex, 0, item);
+                  return next;
+                });
+                setStatus(prev => `Moved "${item.label}" → To Do` + (prev ? '\n' + prev : ''));
+              }}
             />
           </View>
           <View style={[cs.xDivider, isNarrow && cs.xDividerNarrow]} />
           <View style={cs.xCol}>
             <Text style={cs.xColTitle}>Done</Text>
-            <DraggableList
+            <SortableList
               id="done"
               data={done}
               keyExtractor={(item) => item.id}
-              itemSize={40}
               direction="vertical"
+              dragEffect={effect === 'none' ? undefined : effect}
               renderItem={renderItem}
-              activeContainerStyle={activeContainerStyle}
-              activeDragStyle={activeDragStyle}
               renderInsertIndicator={renderInsertIndicator}
-
+              onReorder={(data) => {
+                setDone(data);
+                setStatus(prev => 'Reordered Done' + (prev ? '\n' + prev : ''));
+              }}
+              onExternalDrop={({ activeId, insertIndex }) => {
+                const item = todo.find(i => i.id === activeId);
+                if (!item) return;
+                setTodo(prev => prev.filter(i => i.id !== activeId));
+                setDone(prev => {
+                  const next = [...prev];
+                  next.splice(insertIndex, 0, item);
+                  return next;
+                });
+                setStatus(prev => `Moved "${item.label}" → Done` + (prev ? '\n' + prev : ''));
+              }}
             />
           </View>
         </View>
-      </DraggableListGroup>
+      </DndProvider>
       <OptionPicker label="dragEffect" options={DRAG_EFFECTS} value={effect} onChange={setEffect} />
       <View style={cs.demo1Log}>
         <View style={cs.logRow}>
           <Text style={[cs.demo1LogText, { flex: 1 }]}>
-            {status || '// drag between lists — DraggableListGroup fires onDrop'}
+            {status || '// drag between lists — onExternalDrop fires'}
           </Text>
           <ResetButton onPress={() => { setTodo(INITIAL_TODO); setDone(INITIAL_DONE); setStatus(''); }} />
         </View>
@@ -1432,7 +1412,7 @@ export default function App() {
         <DemoBlock
           num="03"
           title="Cross-List Transfer"
-          desc="Drag items between independent lists. DraggableListGroup coordinates the transfer and fires onDrop with source and target info."
+          desc="Two SortableLists under one DndProvider. Each list handles onExternalDrop for incoming items — no wrapper component needed."
           panel={<Demo3Panel isNarrow={isNarrow} />}
           tabs={{ Setup: XLIST_SETUP, Callbacks: XLIST_CALLBACKS, Full: XLIST_FULL }}
           isNarrow={isNarrow}
