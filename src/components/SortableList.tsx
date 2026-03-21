@@ -405,12 +405,20 @@ interface SortableInsertionIndicatorProps {
   activeId: SharedValue<string | null>;
   isDragging: SharedValue<boolean>;
   currentPrefixSum: SharedValue<number[]>;
+  originalPrefixSum: SharedValue<number[]>;
   direction: 'horizontal' | 'vertical';
+  itemCount: number;
+  gap: number;
   renderIndicator: (index: number) => React.ReactNode;
-  /** DndContext overId — used to hide indicator when item leaves this container */
+  /** DndContext overId — used to hide/show indicator for cross-list */
   dndOverId?: SharedValue<string | null>;
-  /** This container's droppable ID in DndContext */
+  dndActiveId?: SharedValue<string | null>;
+  dndAbsoluteX?: SharedValue<number>;
+  dndAbsoluteY?: SharedValue<number>;
+  dndIsDragging?: SharedValue<boolean>;
+  /** This container's droppable ID and rect in DndContext */
   containerDroppableId?: string;
+  containerRect?: SharedValue<{ x: number; y: number; width: number; height: number } | null>;
 }
 
 function SortableInsertionIndicator({
@@ -418,38 +426,67 @@ function SortableInsertionIndicator({
   activeId,
   isDragging,
   currentPrefixSum,
+  originalPrefixSum,
   direction,
+  itemCount,
+  gap,
   renderIndicator,
   dndOverId,
+  dndActiveId,
+  dndAbsoluteX,
+  dndAbsoluteY,
+  dndIsDragging,
   containerDroppableId,
+  containerRect,
 }: SortableInsertionIndicatorProps) {
   const isHorizontal = direction === 'horizontal';
   const [state, setState] = useState<{ idx: number; position: number } | null>(null);
 
   useAnimatedReaction(
     () => {
+      // Case 1: Internal drag (item from this list)
       const id = activeId.value;
-      if (!id || !isDragging.value) return null;
-
-      // If DndContext is available and the item is over a DIFFERENT container, hide indicator
-      if (dndOverId && containerDroppableId) {
-        const currentOver = dndOverId.value;
-        if (currentOver && currentOver !== containerDroppableId) return null;
+      if (id && isDragging.value) {
+        // If item is over a different container, hide
+        if (dndOverId && containerDroppableId) {
+          const currentOver = dndOverId.value;
+          if (currentOver && currentOver !== containerDroppableId) return null;
+        }
+        const idx = positions.value[id];
+        if (idx === undefined) return null;
+        const ps = currentPrefixSum.value;
+        const lastItemIdx = Math.max(0, ps.length - 2);
+        const posIdx = Math.min(idx + 1, lastItemIdx);
+        return { idx, position: ps[posIdx] ?? 0 };
       }
 
-      const idx = positions.value[id];
-      if (idx === undefined) return null;
-      const ps = currentPrefixSum.value;
-      const lastItemIdx = Math.max(0, ps.length - 2);
-      const posIdx = Math.min(idx + 1, lastItemIdx);
-      return { idx, position: ps[posIdx] ?? 0 };
+      // Case 2: External drag hovering over this container
+      if (dndOverId && dndActiveId && dndIsDragging && dndAbsoluteX && dndAbsoluteY && containerRect && containerDroppableId) {
+        const isOverUs = dndOverId.value === containerDroppableId;
+        const externalId = dndActiveId.value;
+        const isExternal = externalId ? (positions.value[externalId] === undefined) : false;
+
+        if (isOverUs && isExternal && dndIsDragging.value) {
+          const rect = containerRect.value;
+          if (!rect) return null;
+          const pointerRelative = isHorizontal
+            ? (dndAbsoluteX.value + (typeof window !== 'undefined' ? window.scrollX : 0)) - rect.x
+            : (dndAbsoluteY.value + (typeof window !== 'undefined' ? window.scrollY : 0)) - rect.y;
+          const insertIdx = getInsertionIndexAtPosition(originalPrefixSum.value, pointerRelative, itemCount, gap);
+          const ps = originalPrefixSum.value;
+          const posIdx = Math.min(insertIdx, Math.max(0, ps.length - 2));
+          return { idx: insertIdx, position: ps[posIdx] ?? 0 };
+        }
+      }
+
+      return null;
     },
     (cur, prev) => {
       if (cur?.idx !== prev?.idx || cur?.position !== prev?.position) {
         runOnJS(setState)(cur);
       }
     },
-    []
+    [itemCount, gap]
   );
 
   if (state === null) return null;
@@ -716,10 +753,18 @@ export function SortableList<T>({
       activeId={activeId}
       isDragging={isDragging}
       currentPrefixSum={currentPrefixSumSV}
+      originalPrefixSum={originalPrefixSumSV}
       direction={direction}
+      itemCount={data.length}
+      gap={gap}
       renderIndicator={renderInsertIndicator}
       dndOverId={dndCtx?.overId}
+      dndActiveId={dndCtx?.activeId}
+      dndAbsoluteX={dndCtx?.absoluteX}
+      dndAbsoluteY={dndCtx?.absoluteY}
+      dndIsDragging={dndCtx?.isDragging}
       containerDroppableId={containerDroppableId}
+      containerRect={containerDroppableRect}
     />
   ) : null;
 
