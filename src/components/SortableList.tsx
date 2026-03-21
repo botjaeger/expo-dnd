@@ -407,6 +407,10 @@ interface SortableInsertionIndicatorProps {
   currentPrefixSum: SharedValue<number[]>;
   direction: 'horizontal' | 'vertical';
   renderIndicator: (index: number) => React.ReactNode;
+  /** DndContext overId — used to hide indicator when item leaves this container */
+  dndOverId?: SharedValue<string | null>;
+  /** This container's droppable ID in DndContext */
+  containerDroppableId?: string;
 }
 
 function SortableInsertionIndicator({
@@ -416,6 +420,8 @@ function SortableInsertionIndicator({
   currentPrefixSum,
   direction,
   renderIndicator,
+  dndOverId,
+  containerDroppableId,
 }: SortableInsertionIndicatorProps) {
   const isHorizontal = direction === 'horizontal';
   const [state, setState] = useState<{ idx: number; position: number } | null>(null);
@@ -424,6 +430,13 @@ function SortableInsertionIndicator({
     () => {
       const id = activeId.value;
       if (!id || !isDragging.value) return null;
+
+      // If DndContext is available and the item is over a DIFFERENT container, hide indicator
+      if (dndOverId && containerDroppableId) {
+        const currentOver = dndOverId.value;
+        if (currentOver && currentOver !== containerDroppableId) return null;
+      }
+
       const idx = positions.value[id];
       if (idx === undefined) return null;
       const ps = currentPrefixSum.value;
@@ -705,6 +718,8 @@ export function SortableList<T>({
       currentPrefixSum={currentPrefixSumSV}
       direction={direction}
       renderIndicator={renderInsertIndicator}
+      dndOverId={dndCtx?.overId}
+      containerDroppableId={containerDroppableId}
     />
   ) : null;
 
