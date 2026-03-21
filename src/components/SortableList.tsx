@@ -89,6 +89,10 @@ interface SortableItemProps<T> {
   dndOverId?: SharedValue<string | null>;
   dndRunCollision?: (activeId: string, absoluteX: number, absoluteY: number) => void;
   dndMeasureDroppables?: () => void;
+  /** Index where an external item would be inserted (-1 = no external hover) */
+  externalInsertIndex: SharedValue<number>;
+  /** Height of the external item being dragged (for shift offset) */
+  externalItemHeight: SharedValue<number>;
 }
 
 function SortableItemInner<T>({
@@ -124,6 +128,8 @@ function SortableItemInner<T>({
   dndOverId,
   dndRunCollision,
   dndMeasureDroppables,
+  externalInsertIndex,
+  externalItemHeight,
 }: SortableItemProps<T>) {
   const isActive = useSharedValue(false);
   const isPressing = useSharedValue(false);
@@ -347,6 +353,14 @@ function SortableItemInner<T>({
       crossAxisPos = isHorizontal ? crossAxisTranslation.value : crossAxisTranslation.value;
     } else {
       mainAxisPos = animatedPosition.value;
+      // Shift down when an external item hovers above this item's position
+      const extIdx = externalInsertIndex.value;
+      if (extIdx >= 0) {
+        const myPos = positions.value[itemId] ?? originalIndex;
+        if (myPos >= extIdx) {
+          mainAxisPos += externalItemHeight.value;
+        }
+      }
     }
 
     const dragScale = dragEffectConfig?.scale ?? 1.03;
@@ -635,6 +649,33 @@ export function SortableList<T>({
     }
   }, [handleContainerLayout, dndCtx, containerRef, containerDroppableRect]);
 
+  // Track external hover insertion index — items shift to make space
+  const externalInsertIndex = useSharedValue(-1);
+  const externalItemHeight = useSharedValue(50); // default height estimate for external items
+
+  useAnimatedReaction(
+    () => {
+      if (!dndCtx) return -1;
+      const isOverUs = dndCtx.overId.value === containerDroppableId;
+      const externalId = dndCtx.activeId.value;
+      const isExternal = externalId ? (positions.value[externalId] === undefined) : false;
+      if (!isOverUs || !isExternal || !dndCtx.isDragging.value) return -1;
+
+      // Compute insertion index from pointer
+      const rect = containerDroppableRect.value;
+      if (!rect) return -1;
+      const absMain = isHorizontal ? dndCtx.absoluteX.value : dndCtx.absoluteY.value;
+      const scrollOffset = typeof window !== 'undefined'
+        ? (isHorizontal ? window.scrollX : window.scrollY) : 0;
+      const relativePos = (absMain + scrollOffset) - (isHorizontal ? rect.x : rect.y);
+      return getInsertionIndexAtPosition(originalPrefixSumSV.value, relativePos, data.length, gap);
+    },
+    (idx) => {
+      externalInsertIndex.value = idx;
+    },
+    [data.length, gap]
+  );
+
   // Detect external Draggable drops onto this SortableList.
   // Watches DndContext: when isDragging transitions true→false and overId was our container,
   // compute insertion index and fire onExternalDrop.
@@ -744,6 +785,8 @@ export function SortableList<T>({
       dndOverId={dndCtx?.overId}
       dndRunCollision={dndCtx?.runCollisionDetection}
       dndMeasureDroppables={dndCtx?.measureDroppables}
+      externalInsertIndex={externalInsertIndex}
+      externalItemHeight={externalItemHeight}
     />
   ));
 
