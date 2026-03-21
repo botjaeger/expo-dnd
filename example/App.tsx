@@ -15,13 +15,11 @@ import {
   Draggable,
   Droppable,
   SortableList,
-  DraggableListGroup,
-  DraggableList,
   useDraggable,
   useDroppable,
   useDndContext,
 } from '../src';
-import type { DragEndEvent, DropEvent } from '../src';
+import type { DragEndEvent } from '../src';
 
 // ── Colors ───────────────────────────────────────────────────────────────────
 const C = {
@@ -222,99 +220,41 @@ const SORT_ITEMS: SortItem[] = [
   { id: '5', label: 'Ship to npm' },
 ];
 
-const LIST_A: SortItem[] = [
-  { id: 'a1', label: 'Alpha' },
-  { id: 'a2', label: 'Beta' },
-  { id: 'a3', label: 'Gamma' },
-];
-const LIST_B: SortItem[] = [
-  { id: 'b1', label: 'Delta' },
-  { id: 'b2', label: 'Epsilon' },
-];
-
 function Demo2() {
-  const [listA, setListA] = useState(LIST_A);
-  const [listB, setListB] = useState(LIST_B);
+  const [items, setItems] = useState(SORT_ITEMS);
   const [log, setLog] = useState('');
   const [effect, setEffect] = useState<DragEffectOption>('pickup');
 
   return (
     <View style={s.demoWrap}>
       <DemoHeader
-        title="Cross-Sortable Transfer"
-        desc="Two SortableLists under one DndProvider. Drag between them — unified architecture."
+        title="Sortable List"
+        desc="Long-press to reorder. Items animate into place with spring physics."
       />
-      <DndProvider>
-        <View style={s.zonesRow}>
-          <View style={{ flex: 1 }}>
-            <Text style={s.zoneLabel}>List A</Text>
-            <SortableList
-              id="listA"
-              data={listA}
-              keyExtractor={(item) => item.id}
-              direction="vertical"
-              dragEffect={effect === 'none' ? undefined : effect}
-              renderInsertIndicator={renderInsertIndicator}
-              renderItem={({ item }) => (
-                <View style={s.sortRow}>
-                  <Text style={s.grip}>{'\u2807'}</Text>
-                  <Text style={s.sortLabel}>{item.label}</Text>
-                </View>
-              )}
-              onReorder={(data) => {
-                setListA(data);
-                setLog(prev => 'Reordered List A' + (prev ? '\n' + prev : ''));
-              }}
-              onExternalDrop={({ activeId, insertIndex }) => {
-                const item = listB.find(i => i.id === activeId);
-                if (!item) return;
-                setListB(prev => prev.filter(i => i.id !== activeId));
-                setListA(prev => {
-                  const next = [...prev];
-                  next.splice(insertIndex, 0, item);
-                  return next;
-                });
-                setLog(prev => `Moved "${item.label}" → List A at ${insertIndex}` + (prev ? '\n' + prev : ''));
-              }}
-            />
+      <SortableList
+        data={items}
+        keyExtractor={(item) => item.id}
+        direction="vertical"
+        dragEffect={effect === 'none' ? undefined : effect}
+        activeDragStyle={{ opacity: 0.3 }}
+        renderInsertIndicator={renderInsertIndicator}
+        renderItem={({ item, isDragging }) => (
+          <View style={[s.sortRow, isDragging && { opacity: 0.4 }]}>
+            <Text style={s.grip}>{'\u2807'}</Text>
+            <Text style={s.sortLabel}>{item.label}</Text>
           </View>
-          <View style={{ flex: 1 }}>
-            <Text style={s.zoneLabel}>List B</Text>
-            <SortableList
-              id="listB"
-              data={listB}
-              keyExtractor={(item) => item.id}
-              direction="vertical"
-              dragEffect={effect === 'none' ? undefined : effect}
-              renderInsertIndicator={renderInsertIndicator}
-              renderItem={({ item }) => (
-                <View style={s.sortRow}>
-                  <Text style={s.grip}>{'\u2807'}</Text>
-                  <Text style={s.sortLabel}>{item.label}</Text>
-                </View>
-              )}
-              onReorder={(data) => {
-                setListB(data);
-                setLog(prev => 'Reordered List B' + (prev ? '\n' + prev : ''));
-              }}
-              onExternalDrop={({ activeId, insertIndex }) => {
-                const item = listA.find(i => i.id === activeId);
-                if (!item) return;
-                setListA(prev => prev.filter(i => i.id !== activeId));
-                setListB(prev => {
-                  const next = [...prev];
-                  next.splice(insertIndex, 0, item);
-                  return next;
-                });
-                setLog(prev => `Moved "${item.label}" → List B at ${insertIndex}` + (prev ? '\n' + prev : ''));
-              }}
-            />
-          </View>
-        </View>
-      </DndProvider>
+        )}
+        onReorder={(data, event) => {
+          setItems(data);
+          setLog(prev =>
+            `Moved "${data[event.toIndex].label}" ${event.fromIndex} → ${event.toIndex}` +
+            (prev ? '\n' + prev : '')
+          );
+        }}
+      />
       <OptionPicker label="dragEffect" options={DRAG_EFFECTS} value={effect} onChange={setEffect} />
-      <EventLog log={log} placeholder="// drag between lists — onExternalDrop fires" />
-      <ResetButton onPress={() => { setListA(LIST_A); setListB(LIST_B); setLog(''); }} />
+      <EventLog log={log} placeholder="// long-press to reorder — onReorder fires" />
+      <ResetButton onPress={() => { setItems(SORT_ITEMS); setLog(''); }} />
     </View>
   );
 }
@@ -347,38 +287,11 @@ const INIT_DONE: TaskItem[] = [
   { id: 'd5', label: 'Deploy scripts' },
 ];
 
-const xActiveContainerStyle = {
-  borderWidth: 1,
-  borderColor: C.accent,
-  backgroundColor: 'rgba(59, 130, 246, 0.06)',
-  borderRadius: 6,
-};
-
 function Demo3() {
   const [todo, setTodo] = useState(INIT_TODO);
   const [done, setDone] = useState(INIT_DONE);
   const [log, setLog] = useState('');
   const [effect, setEffect] = useState<DragEffectOption>('scaleUp');
-
-  const handleDrop = useCallback((event: DropEvent<TaskItem>) => {
-    const { item, fromListId, fromIndex, toListId, toIndex } = event;
-    if (fromListId === toListId) {
-      const setter = fromListId === 'todo' ? setTodo : setDone;
-      setter(prev => {
-        const next = [...prev];
-        next.splice(fromIndex, 1);
-        next.splice(toIndex, 0, item);
-        return next;
-      });
-      setLog(prev => `Reordered in ${fromListId}` + (prev ? '\n' + prev : ''));
-    } else {
-      (fromListId === 'todo' ? setTodo : setDone)(prev => prev.filter(i => i.id !== item.id));
-      (toListId === 'todo' ? setTodo : setDone)(prev => [
-        ...prev.slice(0, toIndex), item, ...prev.slice(toIndex),
-      ]);
-      setLog(prev => `Moved "${item.label}" → ${toListId}` + (prev ? '\n' + prev : ''));
-    }
-  }, []);
 
   const renderItem = useCallback(
     ({ item, isDragging }: { item: TaskItem; isDragging: boolean }) => (
@@ -392,45 +305,69 @@ function Demo3() {
     <View style={s.demoWrap}>
       <DemoHeader
         title="Cross-List Transfer"
-        desc="Drag between lists to transfer, or within a list to reorder."
+        desc="Two SortableLists under one DndProvider. Drag between them via onExternalDrop."
       />
-      <DraggableListGroup onDrop={handleDrop} dragEffect={effect === 'none' ? undefined : effect}>
+      <DndProvider>
         <View style={s.xCols}>
           <View style={s.xCol}>
             <Text style={s.xColTitle}>To Do</Text>
-            <DraggableList
+            <SortableList
               id="todo"
               data={todo}
               keyExtractor={(i) => i.id}
-              itemSize={40}
-              containerSize={400}
               direction="vertical"
-              renderItem={renderItem}
-              activeContainerStyle={xActiveContainerStyle}
-              activeDragStyle={{ opacity: 0.3 }}
+              dragEffect={effect === 'none' ? undefined : effect}
               renderInsertIndicator={renderInsertIndicator}
+              renderItem={renderItem}
+              onReorder={(data) => {
+                setTodo(data);
+                setLog(prev => 'Reordered To Do' + (prev ? '\n' + prev : ''));
+              }}
+              onExternalDrop={({ activeId, insertIndex }) => {
+                const item = done.find(i => i.id === activeId);
+                if (!item) return;
+                setDone(prev => prev.filter(i => i.id !== activeId));
+                setTodo(prev => {
+                  const next = [...prev];
+                  next.splice(insertIndex, 0, item);
+                  return next;
+                });
+                setLog(prev => `Moved "${item.label}" → To Do` + (prev ? '\n' + prev : ''));
+              }}
             />
           </View>
           <View style={s.xDivider} />
           <View style={s.xCol}>
             <Text style={s.xColTitle}>Done</Text>
-            <DraggableList
+            <SortableList
               id="done"
               data={done}
               keyExtractor={(i) => i.id}
-              itemSize={40}
-              containerSize={400}
               direction="vertical"
-              renderItem={renderItem}
-              activeContainerStyle={xActiveContainerStyle}
-              activeDragStyle={{ opacity: 0.3 }}
+              dragEffect={effect === 'none' ? undefined : effect}
               renderInsertIndicator={renderInsertIndicator}
+              renderItem={renderItem}
+              onReorder={(data) => {
+                setDone(data);
+                setLog(prev => 'Reordered Done' + (prev ? '\n' + prev : ''));
+              }}
+              onExternalDrop={({ activeId, insertIndex }) => {
+                const item = todo.find(i => i.id === activeId);
+                if (!item) return;
+                setTodo(prev => prev.filter(i => i.id !== activeId));
+                setDone(prev => {
+                  const next = [...prev];
+                  next.splice(insertIndex, 0, item);
+                  return next;
+                });
+                setLog(prev => `Moved "${item.label}" → Done` + (prev ? '\n' + prev : ''));
+              }}
             />
           </View>
         </View>
-      </DraggableListGroup>
+      </DndProvider>
       <OptionPicker label="dragEffect" options={DRAG_EFFECTS} value={effect} onChange={setEffect} />
-      <EventLog log={log} placeholder="// drag between lists — onDrop fires" />
+      <EventLog log={log} placeholder="// drag between lists — onExternalDrop fires" />
       <ResetButton onPress={() => { setTodo(INIT_TODO); setDone(INIT_DONE); setLog(''); }} />
     </View>
   );
