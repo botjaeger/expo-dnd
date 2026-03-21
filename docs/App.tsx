@@ -205,7 +205,6 @@ const SORT_FULL: readonly CodeLine[] = [
   [["      ", undefined], ["direction", PROP], ["=", undefined], ['"vertical"', STR]],
   [["      ", undefined], ["dragEffect", PROP], ["=", undefined], ['"pickup"', STR]],
   [["      ", undefined], ["activeDragStyle", PROP], ["={{ opacity: 0.3 }}"]],
-  [["      ", undefined], ["renderInsertIndicator", PROP], ["={(idx) => <", undefined], ["Indicator", TAG], [" index={idx} />}"]],
   [["      ", undefined], ["renderItem", PROP], ["={({ item, isDragging }) => ("]],
   [["        <", TAG], ["View", undefined], [" style", PROP], ["={[s.row, isDragging && s.ghost]}>"]],
   [["          <", TAG], ["Text", undefined], [">⠿ {item.label}</", TAG], ["Text", undefined], [">"]],
