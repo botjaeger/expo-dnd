@@ -3,7 +3,6 @@ import {
   View,
   Text,
   TextInput,
-  ScrollView,
   StyleSheet,
   TouchableOpacity,
   useWindowDimensions,
@@ -685,12 +684,7 @@ export function CalendarDemo({ onBack }: { onBack: () => void }) {
       </View>
 
       {/* ── Main content ────────────────────────────────────────────────────── */}
-      <ScrollView
-        style={s.content}
-        contentContainerStyle={s.contentContainer}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-      >
+      <View style={s.content}>
         {view === 'month' && (
           <MonthView
             events={events}
@@ -726,7 +720,7 @@ export function CalendarDemo({ onBack }: { onBack: () => void }) {
             onSubmit={editingEvent ? handleSaveEdit : handleAddEvent}
           />
         )}
-      </ScrollView>
+      </View>
     </View>
   );
 }
@@ -948,6 +942,7 @@ const s = StyleSheet.create({
   },
   monthRow: {
     flexDirection: 'row',
+    flex: 1,
   },
   monthCell: {
     flex: 1,
