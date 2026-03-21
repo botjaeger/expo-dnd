@@ -149,14 +149,7 @@ export function KanbanDemo({ onBack }: { onBack: () => void }) {
     setDone(INIT_DONE);
   }, []);
 
-  // Card height: tag(20) + title(18) + padding(24) + border(2) = 64 base
-  // With desc: + marginTop(6) + ~16 per line ≈ +32 = 96
-  const CARD_BASE = 64;
-  const CARD_WITH_DESC = 96;
-  const cardHeight = (card: KanbanCard) => card.desc ? CARD_WITH_DESC : CARD_BASE;
-  const todoSizes = (i: number) => cardHeight(todo[i]);
-  const progressSizes = (i: number) => cardHeight(progress[i]);
-  const doneSizes = (i: number) => cardHeight(done[i]);
+  const CARD_HEIGHT = 110;
 
   return (
     <View style={s.root}>
@@ -188,7 +181,7 @@ export function KanbanDemo({ onBack }: { onBack: () => void }) {
                 id="todo"
                 data={todo}
                 keyExtractor={(i) => i.id}
-                itemSize={todoSizes}
+                itemSize={CARD_HEIGHT}
                 containerSize={isNarrow ? 300 : 400}
                 direction="vertical"
                 renderItem={renderCard}
@@ -205,7 +198,7 @@ export function KanbanDemo({ onBack }: { onBack: () => void }) {
                 id="progress"
                 data={progress}
                 keyExtractor={(i) => i.id}
-                itemSize={progressSizes}
+                itemSize={CARD_HEIGHT}
                 containerSize={isNarrow ? 300 : 400}
                 direction="vertical"
                 renderItem={renderCard}
@@ -222,7 +215,7 @@ export function KanbanDemo({ onBack }: { onBack: () => void }) {
                 id="done"
                 data={done}
                 keyExtractor={(i) => i.id}
-                itemSize={doneSizes}
+                itemSize={CARD_HEIGHT}
                 containerSize={isNarrow ? 300 : 400}
                 direction="vertical"
                 renderItem={renderCard}
@@ -346,6 +339,8 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: C.border,
     padding: 12,
+    height: 108,
+    overflow: 'hidden',
   },
   cardDragging: {
     opacity: 0.4,
