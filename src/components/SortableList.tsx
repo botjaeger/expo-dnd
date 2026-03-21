@@ -7,10 +7,10 @@ import Animated, {
   useAnimatedReaction,
   useAnimatedRef,
   useDerivedValue,
-  withTiming,
   runOnJS,
   type SharedValue,
 } from 'react-native-reanimated';
+import { withTimingRM } from '../utils/motion';
 import { objectMove, clamp } from '../utils/sortable';
 import { resolveDragEffect, type DragEffectConfig } from '../animations/dragEffects';
 import { getIndexAtMidpoint } from '../utils/heights';
@@ -136,7 +136,7 @@ function SortableItemInner<T>({
     },
     (targetPos, prevTargetPos) => {
       if (!isActive.value && prevTargetPos !== null && targetPos !== prevTargetPos) {
-        animatedPosition.value = withTiming(targetPos, TIMING_CONFIG);
+        animatedPosition.value = withTimingRM(targetPos, TIMING_CONFIG);
       }
     }
   );
@@ -247,7 +247,7 @@ function SortableItemInner<T>({
       isDragging.value = false;
 
       // Animate to final position, then fire callback
-      animatedPosition.value = withTiming(finalPos, TIMING_CONFIG, () => {
+      animatedPosition.value = withTimingRM(finalPos, TIMING_CONFIG, () => {
         'worklet';
         if (fromIndex !== finalIndex && !dragEndFired.value) {
           dragEndFired.value = true;
@@ -274,7 +274,7 @@ function SortableItemInner<T>({
         activeId.value = null;
         isDragging.value = false;
 
-        animatedPosition.value = withTiming(targetPos, TIMING_CONFIG);
+        animatedPosition.value = withTimingRM(targetPos, TIMING_CONFIG);
       } else if (!success) {
         isPressing.value = false;
       }

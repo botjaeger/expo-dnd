@@ -78,7 +78,7 @@ function OptionPicker<T extends string>({
 
 function ResetButton({ onPress }: { onPress: () => void }) {
   return (
-    <TouchableOpacity style={s.resetBtn} onPress={onPress} activeOpacity={0.7}>
+    <TouchableOpacity style={s.resetBtn} onPress={onPress} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="Reset demo">
       <Text style={s.resetText}>{'\u21BB'} Reset</Text>
     </TouchableOpacity>
   );
@@ -544,7 +544,7 @@ export default function App() {
           contentContainerStyle={s.tabsContent}
         >
           {DEMOS.map(({ key, label }) => (
-            <TouchableOpacity key={key} onPress={() => setActive(key)} activeOpacity={0.7}>
+            <TouchableOpacity key={key} onPress={() => setActive(key)} activeOpacity={0.7} accessibilityRole="tab" accessibilityLabel={label}>
               <View style={[s.tab, active === key && s.tabActive]}>
                 <Text style={[s.tabText, active === key && s.tabTextActive]}>{label}</Text>
               </View>
@@ -584,7 +584,7 @@ const s = StyleSheet.create({
   // Tabs
   tabs: { maxHeight: 44, marginTop: 12 },
   tabsContent: { paddingHorizontal: 12, gap: 6 },
-  tab: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8, backgroundColor: C.surface },
+  tab: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8, backgroundColor: C.surface, minHeight: 44, justifyContent: 'center' },
   tabActive: { backgroundColor: C.accent },
   tabText: { fontFamily: 'monospace', fontSize: 12, color: C.muted },
   tabTextActive: { color: '#fff', fontWeight: '600' },
@@ -605,7 +605,7 @@ const s = StyleSheet.create({
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
 
   // Reset button
-  resetBtn: { marginTop: 12, alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 6, borderWidth: 1, borderColor: C.border },
+  resetBtn: { marginTop: 12, alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 6, borderWidth: 1, borderColor: C.border, minHeight: 44, justifyContent: 'center' },
   resetText: { fontFamily: 'monospace', fontSize: 11, color: C.dim },
 
   // Event log
@@ -616,7 +616,7 @@ const s = StyleSheet.create({
   effectPicker: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 16 },
   effectLabel: { fontFamily: 'monospace', fontSize: 10, color: C.dim, textTransform: 'uppercase', letterSpacing: 0.5 },
   effectOptions: { flexDirection: 'row', gap: 4, flexWrap: 'wrap' },
-  effectBtn: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 4, backgroundColor: C.surface, borderWidth: 1, borderColor: C.border },
+  effectBtn: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 4, backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, minHeight: 44, justifyContent: 'center' },
   effectBtnActive: { backgroundColor: C.accent, borderColor: C.accent },
   effectBtnText: { fontFamily: 'monospace', fontSize: 10, color: C.muted },
   effectBtnTextActive: { color: '#fff', fontWeight: '600' },
