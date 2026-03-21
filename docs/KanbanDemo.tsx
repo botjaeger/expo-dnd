@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import {
   DraggableListGroup,
-  DraggableList,
+  AutoDraggableList,
 } from '../src';
 import type { DropEvent } from '../src';
 
@@ -149,7 +149,6 @@ export function KanbanDemo({ onBack }: { onBack: () => void }) {
     setDone(INIT_DONE);
   }, []);
 
-  const CARD_HEIGHT = 110;
 
   return (
     <View style={s.root}>
@@ -177,11 +176,10 @@ export function KanbanDemo({ onBack }: { onBack: () => void }) {
             {/* To Do */}
             <View style={[s.column, isNarrow && s.columnNarrow]}>
               <ColumnHeader title="To Do" count={todo.length} color={C.accent} />
-              <DraggableList
+              <AutoDraggableList
                 id="todo"
                 data={todo}
                 keyExtractor={(i) => i.id}
-                itemSize={CARD_HEIGHT}
                 containerSize={isNarrow ? 300 : 400}
                 direction="vertical"
                 renderItem={renderCard}
@@ -194,11 +192,10 @@ export function KanbanDemo({ onBack }: { onBack: () => void }) {
             {/* In Progress */}
             <View style={[s.column, isNarrow && s.columnNarrow]}>
               <ColumnHeader title="In Progress" count={progress.length} color={C.orange} />
-              <DraggableList
+              <AutoDraggableList
                 id="progress"
                 data={progress}
                 keyExtractor={(i) => i.id}
-                itemSize={CARD_HEIGHT}
                 containerSize={isNarrow ? 300 : 400}
                 direction="vertical"
                 renderItem={renderCard}
@@ -211,11 +208,10 @@ export function KanbanDemo({ onBack }: { onBack: () => void }) {
             {/* Done */}
             <View style={[s.column, isNarrow && s.columnNarrow]}>
               <ColumnHeader title="Done" count={done.length} color={C.green} />
-              <DraggableList
+              <AutoDraggableList
                 id="done"
                 data={done}
                 keyExtractor={(i) => i.id}
-                itemSize={CARD_HEIGHT}
                 containerSize={isNarrow ? 300 : 400}
                 direction="vertical"
                 renderItem={renderCard}
@@ -339,8 +335,7 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: C.border,
     padding: 12,
-    height: 108,
-    overflow: 'hidden',
+    marginBottom: 6,
   },
   cardDragging: {
     opacity: 0.4,

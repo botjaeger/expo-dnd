@@ -8,6 +8,7 @@ export {
 } from './components/AutoSortable';
 export { SortableFlatList } from './components/SortableFlatList';
 export { DraggableList, DraggableListGroup, type DraggableListProps, type DraggableListGroupProps, type DraggableListItemInfo, type DropEvent } from './components/DraggableList';
+export { AutoDraggableList, type AutoDraggableListProps } from './components/AutoDraggableList';
 
 // Hooks
 export { useDraggable, type UseDraggableProps, type UseDraggableReturn } from './hooks/useDraggable';
