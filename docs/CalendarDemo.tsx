@@ -601,10 +601,15 @@ export function CalendarDemo({ onBack }: { onBack: () => void }) {
         return [...others, ...next];
       });
     } else {
-      // Cross-day transfer: update event date
-      setEvents((prev) =>
-        prev.map((e) => (e.id === item.id ? { ...e, date: toListId } : e))
-      );
+      // Cross-day transfer: remove from source, insert at toIndex in target day
+      setEvents((prev) => {
+        const without = prev.filter((e) => e.id !== item.id);
+        const targetDayEvs = without.filter((e) => e.date === toListId);
+        const others = without.filter((e) => e.date !== toListId);
+        const updatedItem = { ...item, date: toListId };
+        targetDayEvs.splice(toIndex, 0, updatedItem);
+        return [...others, ...targetDayEvs];
+      });
     }
   }, []);
 
