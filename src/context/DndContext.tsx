@@ -11,11 +11,15 @@ import Animated, {
   runOnUI,
   type AnimatedRef,
 } from 'react-native-reanimated';
+import { rectIntersection } from '../collision/rectIntersection';
+import type { CollisionRect } from '../collision/types';
+import { isWeb } from '../utils/platform';
 import type {
   DndContextValue,
   DraggableDescriptor,
   DroppableDescriptor,
   ActiveDragState,
+  LayoutRect,
 } from './types';
 import type { PortalContextValue } from '../portal/PortalContext';
 import { usePortal } from '../portal/usePortal';
@@ -280,6 +284,42 @@ export function DndContextProvider({
     });
   }, [droppables]);
 
+  // Collision detection callable by external systems (e.g., sortable items)
+  const prevExternalOverIdRef = useRef<string | null>(null);
+  const runCollisionDetection = useCallback((activeItemId: string, absX: number, absY: number) => {
+    const POINTER_SIZE = 4;
+    const pointerX = absX + (isWeb ? window.scrollX : 0);
+    const pointerY = absY + (isWeb ? window.scrollY : 0);
+    const currentRect: LayoutRect = {
+      x: pointerX - POINTER_SIZE / 2,
+      y: pointerY - POINTER_SIZE / 2,
+      width: POINTER_SIZE,
+      height: POINTER_SIZE,
+    };
+
+    const droppableRects: CollisionRect[] = [];
+    droppables.forEach((droppable, droppableId) => {
+      if (droppable.rect.value && !droppable.disabled) {
+        droppableRects.push({
+          id: droppableId,
+          rect: droppable.rect.value,
+          data: droppable.data,
+        });
+      }
+    });
+
+    const collision = rectIntersection(
+      { id: activeItemId, rect: currentRect },
+      droppableRects
+    );
+
+    const newOverId = collision?.id ?? null;
+    if (newOverId !== prevExternalOverIdRef.current) {
+      overId.value = newOverId;
+      prevExternalOverIdRef.current = newOverId;
+    }
+  }, [droppables, overId]);
+
   const contextValue = useMemo<DndContextValue>(
     () => ({
       // Registry
@@ -333,6 +373,7 @@ export function DndContextProvider({
       setActiveId,
       setActiveState,
       measureDroppables,
+      runCollisionDetection,
 
       // Callbacks
       onDragStart,
@@ -373,6 +414,7 @@ export function DndContextProvider({
       setActiveId,
       setActiveState,
       measureDroppables,
+      runCollisionDetection,
       onDragStart,
       onDragMove,
       onDragOver,

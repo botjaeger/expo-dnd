@@ -158,6 +158,9 @@ export interface DndContextValue {
   setActiveId: (id: string | null) => void;
   setActiveState: (state: ActiveDragState | null) => void;
   measureDroppables: () => void;
+  /** Run collision detection from an external source (e.g., sortable item).
+   *  Uses the current absoluteX/Y shared values to find collisions. */
+  runCollisionDetection: (activeId: string, absoluteX: number, absoluteY: number) => void;
 
   // Callbacks
   onDragStart?: (event: DragStartEvent) => void;

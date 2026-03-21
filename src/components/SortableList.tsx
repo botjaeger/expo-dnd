@@ -83,6 +83,7 @@ interface SortableItemProps<T> {
   dndIsDragging?: SharedValue<boolean>;
   dndAbsoluteX?: SharedValue<number>;
   dndAbsoluteY?: SharedValue<number>;
+  dndRunCollision?: (activeId: string, absoluteX: number, absoluteY: number) => void;
 }
 
 function SortableItemInner<T>({
@@ -115,6 +116,7 @@ function SortableItemInner<T>({
   dndIsDragging,
   dndAbsoluteX,
   dndAbsoluteY,
+  dndRunCollision,
 }: SortableItemProps<T>) {
   const isActive = useSharedValue(false);
   const isPressing = useSharedValue(false);
@@ -239,9 +241,12 @@ function SortableItemInner<T>({
         touchPosition.value = isHorizontal ? event.absoluteX : event.absoluteY;
       }
 
-      // Phase 0 spike: update DndContext pointer position
+      // Phase 0 spike: update DndContext pointer position + run collision
       if (dndAbsoluteX) dndAbsoluteX.value = event.absoluteX;
       if (dndAbsoluteY) dndAbsoluteY.value = event.absoluteY;
+      if (dndRunCollision) {
+        runOnJS(dndRunCollision)(itemId, event.absoluteX, event.absoluteY);
+      }
     })
     .onEnd(() => {
       'worklet';
@@ -554,6 +559,7 @@ export function SortableList<T>({
       dndIsDragging={dndCtx?.isDragging}
       dndAbsoluteX={dndCtx?.absoluteX}
       dndAbsoluteY={dndCtx?.absoluteY}
+      dndRunCollision={dndCtx?.runCollisionDetection}
     />
   ));
 
