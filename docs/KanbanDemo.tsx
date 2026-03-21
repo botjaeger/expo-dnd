@@ -407,6 +407,7 @@ export function KanbanDemo({ onBack }: { onBack: () => void }) {
       {editingCard && (
         <View style={s.addFormWrap}>
           <EditCardForm
+            key={editingCard.card.id}
             card={editingCard.card}
             onSave={handleSaveCard}
             onDelete={handleDeleteCard}
