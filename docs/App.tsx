@@ -1216,7 +1216,7 @@ function Nav({ isNarrow, ctx }: { isNarrow: boolean; ctx: ScrollCtx }) {
 
 // ── API Sidebar (desktop only) ───────────────────────────────────────────────
 const SIDEBAR_ITEMS = [
-  { group: 'Components', items: ['DndProvider', 'Draggable', 'DragHandle', 'Droppable', 'SortableList', 'SortableFlatList', 'DraggableList', 'DraggableListGroup'] },
+  { group: 'Components', items: ['DndProvider', 'Draggable', 'DragHandle', 'Droppable', 'SortableList', 'SortableFlatList', 'DraggableList (legacy)', 'DraggableListGroup (legacy)'] },
   { group: 'Hooks', items: ['useDraggable', 'useDroppable', 'useDndContext'] },
   { group: 'Other', items: ['Event Types', 'Collision Detection', 'Drag Effects'] },
 ];
@@ -1453,14 +1453,15 @@ export default function App() {
         <ApiSection
           isNarrow={isNarrow}
           name="DndProvider"
-          desc="Wraps your component tree to enable drag and drop. All Draggable and Droppable components must be descendants."
+          desc="Wraps your component tree to enable drag and drop. All Draggable, Droppable, and SortableList components must be descendants. Required for cross-list transfers."
           props={[
             ['children',    'ReactNode',                     true,  'Child components that use drag and drop'],
             ['onDragStart', '(event: DragStartEvent) => void', false, 'Called when a drag begins'],
             ['onDragMove',  '(event: DragMoveEvent) => void', false, 'Called on every pointer move during drag'],
             ['onDragOver',  '(event: DragOverEvent) => void', false, 'Called when the pointer enters or leaves a droppable'],
             ['onDragEnd',   '(event: DragEndEvent) => void', false, 'Called when the item is released'],
-            ['dragEffect',  'DragEffect | DragEffectConfig', false, 'Scale effect for the drag overlay. Preset: "pickup" | "scaleUp" | "scaleDown" | "bounce". Overridable per item.'],
+            ['dragEffect',  'DragEffect | DragEffectConfig', false, 'Scale effect: "pickup" | "scaleUp" | "scaleDown" | "bounce"'],
+            ['style',       'ViewStyle',                     false, 'Custom style for the provider container'],
           ]}
         />
         </View>
@@ -1479,6 +1480,8 @@ export default function App() {
             ['style',           'ViewStyle', false, 'Style applied to the wrapping Animated.View'],
             ['activeDragStyle', 'ViewStyle', false, 'Style applied to the source element while dragging. Default: { opacity: 0.4 }'],
             ['dragEffect',     'DragEffect | DragEffectConfig', false, 'Scale effect for this item\u2019s overlay. Overrides provider-level effect.'],
+            ['onPress',         '() => void', false, 'Called on tap/click (not after drag)'],
+            ['longPressDuration', 'number',   false, 'Milliseconds before drag activates (default: 200)'],
           ]}
         />
         </View>
@@ -1515,20 +1518,23 @@ export default function App() {
         <ApiSection
           isNarrow={isNarrow}
           name="SortableList"
-          desc="Auto-measuring sortable list. No itemSize needed \u2014 items are measured after render. Handles uniform and variable heights."
+          desc="Auto-measuring sortable list. No itemSize needed \u2014 items are measured after render. When inside a DndProvider, supports cross-list transfers via onExternalDrop."
           props={[
             ['data',                  'T[]',                                       true,  'Array of items to render'],
             ['renderItem',            '({ item, index, isDragging }) => ReactNode', true,  'Render function for each item'],
             ['onReorder',             '(data, event) => void',                     true,  'Called with reordered array and { fromIndex, toIndex, item }'],
             ['keyExtractor',          '(item) => string',                          true,  'Returns a unique key per item'],
-            ['id',                    'string',                                    false, 'Zone identifier (default: "default")'],
-            ['direction',             '"horizontal" | "vertical"',                 false, 'Layout axis (default: "horizontal")'],
+            ['id',                    'string',                                    false, 'Zone identifier (default: "default"). Must be unique when using multiple lists.'],
+            ['direction',             '"horizontal" | "vertical"',                 false, 'Layout axis (default: "vertical")'],
             ['containerSize',         'number',                                    false, 'Fixed size to enable scroll mode with auto-scroll'],
             ['autoScrollThreshold',   'number',                                    false, 'Pixels from edge that triggers auto-scroll (default: 80)'],
             ['handle',                'boolean',                                   false, 'Only DragHandle children can start drag'],
-            ['activeDragStyle',       'ViewStyle',                                 false, 'Style for the source item while dragging (default: invisible)'],
-            ['renderInsertIndicator', '(index) => ReactNode',                      false, 'Render insertion indicator at target index. Return null to hide.'],
-            ['dragEffect',            'DragEffect | DragEffectConfig',             false, 'Scale effect for the overlay: "pickup" | "scaleUp" | "scaleDown" | "bounce"'],
+            ['activeDragStyle',       'ViewStyle',                                 false, 'Style for the source item while dragging'],
+            ['renderInsertIndicator', '(index) => ReactNode',                      false, 'Render insertion indicator at target index'],
+            ['dragEffect',            'DragEffect | DragEffectConfig',             false, 'Scale effect: "pickup" | "scaleUp" | "scaleDown" | "bounce"'],
+            ['onItemPress',           '(item, index) => void',                     false, 'Called on tap/click (not after drag)'],
+            ['onExternalDrop',        '({ activeId, data, insertIndex }) => void', false, 'Called when an external Draggable or sortable item from another list is dropped here'],
+            ['longPressDuration',     'number',                                    false, 'Milliseconds before drag activates (default: 200)'],
             ['onDragStart',           '(id, index) => void',                       false, 'Called when drag begins'],
             ['onDragMove',            '(id, overIndex, position) => void',         false, 'Called during drag with position info'],
             ['onDragEnd',             '(id, fromIndex, toIndex) => void',          false, 'Called when drag ends'],
@@ -1549,7 +1555,7 @@ export default function App() {
             ['keyExtractor',          '(item) => string',                          true,  'Returns a unique key per item'],
             ['itemSize',              'number | (index) => number',                true,  'Item size along the drag axis (height or width)'],
             ['id',                    'string',                                    false, 'Zone identifier (default: "default")'],
-            ['direction',             '"horizontal" | "vertical"',                 false, 'Layout axis (default: "horizontal")'],
+            ['direction',             '"horizontal" | "vertical"',                 false, 'Layout axis (default: "vertical")'],
             ['containerSize',         'number',                                    false, 'Fixed size to enable scroll mode with auto-scroll'],
             ['autoScrollThreshold',   'number',                                    false, 'Pixels from edge that triggers auto-scroll (default: 80)'],
             ['handle',                'boolean',                                   false, 'Only DragHandle children can start drag'],
@@ -1567,8 +1573,8 @@ export default function App() {
         <View ref={trackRef('api-DraggableList')}>
         <ApiSection
           isNarrow={isNarrow}
-          name="DraggableList"
-          desc="Single list within a DraggableListGroup. Supports reorder within and transfer between lists."
+          name="DraggableList (legacy)"
+          desc="Legacy cross-list component. Use SortableList + onExternalDrop instead for new projects."
           props={[
             ['id',                    'string',                              true,  'List identifier used in DropEvent'],
             ['data',                  'T[]',                                 true,  'Array of items'],
@@ -1591,8 +1597,8 @@ export default function App() {
         <View ref={trackRef('api-DraggableListGroup')}>
         <ApiSection
           isNarrow={isNarrow}
-          name="DraggableListGroup"
-          desc="Coordinates drag and drop across child DraggableList components. Fires onDrop on transfer or reorder."
+          name="DraggableListGroup (legacy)"
+          desc="Legacy wrapper for DraggableList cross-list transfers. Use multiple SortableLists under one DndProvider instead."
           props={[
             ['children',   'ReactNode',                      true,  'DraggableList components'],
             ['onDrop',     '(event: DropEvent<T>) => void',  true,  'Called with { item, fromListId, fromIndex, toListId, toIndex }'],
@@ -1607,12 +1613,14 @@ export default function App() {
         <ApiSection
           isNarrow={isNarrow}
           name="useDraggable"
-          desc="Low-level hook for custom draggable components. Must be inside a DndProvider. You must also call ctx.registerDragRenderer(id, renderer) for the overlay clone to appear."
+          desc="Low-level hook for custom draggable components. Must be inside a DndProvider. Call ctx.registerDragRenderer(id, renderer) for the overlay clone."
           props={[
-            ['id',              'string',    true,  'Unique identifier'],
-            ['data',            'unknown',   false, 'Payload forwarded in drag events'],
-            ['disabled',        'boolean',   false, 'Prevents dragging when true'],
-            ['activeDragStyle', 'ViewStyle', false, 'Style for source element while dragging (default: { opacity: 0.4 })'],
+            ['id',                'string',    true,  'Unique identifier'],
+            ['data',              'unknown',   false, 'Payload forwarded in drag events'],
+            ['disabled',          'boolean',   false, 'Prevents dragging when true'],
+            ['activeDragStyle',   'ViewStyle', false, 'Style for source element while dragging (default: { opacity: 0.4 })'],
+            ['onPress',           '() => void', false, 'Called on tap/click (not after drag)'],
+            ['longPressDuration', 'number',    false, 'Milliseconds before drag activates (default: 200)'],
           ]}
         />
         <ApiSection
