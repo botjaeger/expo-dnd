@@ -1,4 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { KanbanDemo } from './KanbanDemo';
 import {
   Image,
   Linking,
@@ -1166,11 +1167,12 @@ function CtaButton({ label, href, primary, onPress }: { label: string; href?: st
 }
 
 // ── Nav ───────────────────────────────────────────────────────────────────────
-function Nav({ isNarrow, ctx }: { isNarrow: boolean; ctx: ScrollCtx }) {
+function Nav({ isNarrow, ctx, onKanban }: { isNarrow: boolean; ctx: ScrollCtx; onKanban?: () => void }) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   const goExamples = () => { ctx.scrollTo(ctx.positions.examples ?? 0); setMenuOpen(false); };
   const goApi = () => { ctx.scrollTo(ctx.positions.api ?? 0); setMenuOpen(false); };
+  const goKanban = () => { setMenuOpen(false); onKanban?.(); };
 
   return (
     <View style={ns.nav}>
@@ -1203,6 +1205,7 @@ function Nav({ isNarrow, ctx }: { isNarrow: boolean; ctx: ScrollCtx }) {
               <View style={ns.mobileMenu}>
                 <TouchableOpacity onPress={goExamples}><Text style={ns.navLink}>Examples</Text></TouchableOpacity>
                 <TouchableOpacity onPress={goApi}><Text style={ns.navLink}>API</Text></TouchableOpacity>
+                <TouchableOpacity onPress={goKanban}><Text style={[ns.navLink, ns.navLinkAccent]}>Kanban</Text></TouchableOpacity>
                 <TouchableOpacity
                   style={ns.navBtnBorder}
                   onPress={() => Linking.openURL('https://github.com/botjaeger/expo-dnd')}
@@ -1224,6 +1227,7 @@ function Nav({ isNarrow, ctx }: { isNarrow: boolean; ctx: ScrollCtx }) {
           <View style={ns.navRight}>
             <TouchableOpacity onPress={goExamples}><Text style={ns.navLink}>Examples</Text></TouchableOpacity>
             <TouchableOpacity onPress={goApi}><Text style={ns.navLink}>API</Text></TouchableOpacity>
+            <TouchableOpacity onPress={goKanban}><Text style={[ns.navLink, ns.navLinkAccent]}>Kanban</Text></TouchableOpacity>
             <TouchableOpacity
               style={ns.navBtnBorder}
               onPress={() => Linking.openURL('https://github.com/botjaeger/expo-dnd')}
@@ -1281,6 +1285,7 @@ function ApiSidebar({ ctx, activeItem, onSelect }: { ctx: ScrollCtx; activeItem:
 export default function App() {
   const { width } = useWindowDimensions();
   const isNarrow = width < 768;
+  const [page, setPage] = useState<'docs' | 'kanban'>('docs');
 
   const scrollRef = useRef<ScrollView>(null);
   const positionsRef = useRef<Record<string, number>>({});
@@ -1329,11 +1334,20 @@ export default function App() {
   }, []);
 
 
+  if (page === 'kanban') {
+    return (
+      <GestureHandlerRootView style={gs.root}>
+        <StatusBar style="light" />
+        <KanbanDemo onBack={() => setPage('docs')} />
+      </GestureHandlerRootView>
+    );
+  }
+
   return (
     <GestureHandlerRootView style={gs.root}>
       <StatusBar style="light" />
 
-      <Nav isNarrow={isNarrow} ctx={ctx} />
+      <Nav isNarrow={isNarrow} ctx={ctx} onKanban={() => setPage('kanban')} />
 
       <ScrollView
         ref={scrollRef}
@@ -1806,6 +1820,10 @@ const ns = StyleSheet.create({
     color: C.muted,
     paddingHorizontal: 10,
     paddingVertical: 6,
+  },
+  navLinkAccent: {
+    color: C.accent,
+    fontWeight: '600',
   },
   navBtnBorder: {
     borderWidth: 1,
