@@ -15,6 +15,8 @@ import { objectMove, clamp } from '../utils/sortable';
 import { resolveDragEffect, type DragEffectConfig } from '../animations/dragEffects';
 import { getIndexAtMidpoint } from '../utils/heights';
 import { DraggableItemContext } from './Draggable';
+import { useContext } from 'react';
+import { DndContext } from '../context/DndContext';
 import {
   TIMING_CONFIG,
   LONG_PRESS_DURATION,
@@ -76,6 +78,11 @@ interface SortableItemProps<T> {
   onDragStart: (id: string, index: number) => void;
   onDragMove: (id: string, overIndex: number, position: number) => void;
   onDragEnd: (id: string, fromIndex: number, toIndex: number) => void;
+  // Phase 0 spike: DndContext shared values for cross-system visibility
+  dndActiveId?: SharedValue<string | null>;
+  dndIsDragging?: SharedValue<boolean>;
+  dndAbsoluteX?: SharedValue<number>;
+  dndAbsoluteY?: SharedValue<number>;
 }
 
 function SortableItemInner<T>({
@@ -104,6 +111,10 @@ function SortableItemInner<T>({
   onDragStart,
   onDragMove,
   onDragEnd,
+  dndActiveId,
+  dndIsDragging,
+  dndAbsoluteX,
+  dndAbsoluteY,
 }: SortableItemProps<T>) {
   const isActive = useSharedValue(false);
   const isPressing = useSharedValue(false);
@@ -188,6 +199,10 @@ function SortableItemInner<T>({
       animatedPosition.value = pixelPos;
       dragEndFired.value = false;
 
+      // Phase 0 spike: write to DndContext so external droppables see this drag
+      if (dndActiveId) dndActiveId.value = itemId;
+      if (dndIsDragging) dndIsDragging.value = true;
+
       if (isScrollMode) {
         dragContentPosition.value = pixelPos;
         dragItemSize.value = itemHeight;
@@ -223,6 +238,10 @@ function SortableItemInner<T>({
       if (isScrollMode) {
         touchPosition.value = isHorizontal ? event.absoluteX : event.absoluteY;
       }
+
+      // Phase 0 spike: update DndContext pointer position
+      if (dndAbsoluteX) dndAbsoluteX.value = event.absoluteX;
+      if (dndAbsoluteY) dndAbsoluteY.value = event.absoluteY;
     })
     .onEnd(() => {
       'worklet';
@@ -245,6 +264,12 @@ function SortableItemInner<T>({
       isPressing.value = false;
       activeId.value = null;
       isDragging.value = false;
+
+      // Phase 0 spike: reset DndContext
+      if (dndActiveId) dndActiveId.value = null;
+      if (dndIsDragging) dndIsDragging.value = false;
+      if (dndAbsoluteX) dndAbsoluteX.value = 0;
+      if (dndAbsoluteY) dndAbsoluteY.value = 0;
 
       // Animate to final position, then fire callback
       animatedPosition.value = withTiming(finalPos, TIMING_CONFIG, () => {
@@ -273,6 +298,12 @@ function SortableItemInner<T>({
         isPressing.value = false;
         activeId.value = null;
         isDragging.value = false;
+
+        // Phase 0 spike: reset DndContext
+        if (dndActiveId) dndActiveId.value = null;
+        if (dndIsDragging) dndIsDragging.value = false;
+        if (dndAbsoluteX) dndAbsoluteX.value = 0;
+        if (dndAbsoluteY) dndAbsoluteY.value = 0;
 
         animatedPosition.value = withTiming(targetPos, TIMING_CONFIG);
       } else if (!success) {
@@ -447,6 +478,9 @@ export function SortableList<T>({
   const flatStyle = StyleSheet.flatten(style) as any;
   const gap = (isHoriz ? flatStyle?.columnGap : flatStyle?.rowGap) ?? flatStyle?.gap ?? 0;
 
+  // Phase 0 spike: access DndContext if available (optional — SortableList can work without DndProvider)
+  const dndCtx = useContext(DndContext);
+
   const {
     isScrollMode,
     isHorizontal,
@@ -516,6 +550,10 @@ export function SortableList<T>({
       onDragStart={handleDragStart}
       onDragMove={handleDragMove}
       onDragEnd={handleDragEnd}
+      dndActiveId={dndCtx?.activeId}
+      dndIsDragging={dndCtx?.isDragging}
+      dndAbsoluteX={dndCtx?.absoluteX}
+      dndAbsoluteY={dndCtx?.absoluteY}
     />
   ));
 
