@@ -1,5 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { KanbanDemo } from './KanbanDemo';
+import { SettingsDemo } from './SettingsDemo';
 import {
   Image,
   Linking,
@@ -1284,7 +1285,7 @@ function ApiSidebar({ ctx, activeItem, onSelect }: { ctx: ScrollCtx; activeItem:
 export default function App() {
   const { width } = useWindowDimensions();
   const isNarrow = width < 768;
-  const [page, setPage] = useState<'docs' | 'kanban'>('docs');
+  const [page, setPage] = useState<'docs' | 'kanban' | 'settings'>('docs');
 
   const scrollRef = useRef<ScrollView>(null);
   const positionsRef = useRef<Record<string, number>>({});
@@ -1338,6 +1339,15 @@ export default function App() {
       <GestureHandlerRootView style={gs.root}>
         <StatusBar style="light" />
         <KanbanDemo onBack={() => setPage('docs')} />
+      </GestureHandlerRootView>
+    );
+  }
+
+  if (page === 'settings') {
+    return (
+      <GestureHandlerRootView style={gs.root}>
+        <StatusBar style="light" />
+        <SettingsDemo onBack={() => setPage('docs')} />
       </GestureHandlerRootView>
     );
   }
@@ -1497,7 +1507,7 @@ export default function App() {
         {/* ── Complex Examples ─────────────────────── */}
         <Text style={gs.sectionMarker}>{'// complex examples'}</Text>
 
-        <View style={gs.complexSection}>
+        <View style={[gs.complexSection, !isNarrow && gs.complexSectionRow]}>
           <TouchableOpacity
             style={gs.complexCard}
             onPress={() => setPage('kanban')}
@@ -1507,13 +1517,34 @@ export default function App() {
               <View style={gs.complexCardHeader}>
                 <Text style={gs.complexCardIcon}>{'\u2630'}</Text>
                 <View style={gs.complexCardBadge}>
-                  <Text style={gs.complexCardBadgeText}>Interactive</Text>
+                  <Text style={gs.complexCardBadgeText}>Cross-list</Text>
                 </View>
               </View>
               <Text style={gs.complexCardTitle}>Kanban Board</Text>
               <Text style={gs.complexCardDesc}>
                 Multi-column task board with drag between columns, tap-to-edit cards,
                 and auto-measuring heights. Built with DraggableListGroup.
+              </Text>
+              <Text style={gs.complexCardLink}>Open demo {'\u2192'}</Text>
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={gs.complexCard}
+            onPress={() => setPage('settings')}
+            activeOpacity={0.8}
+          >
+            <View style={gs.complexCardInner}>
+              <View style={gs.complexCardHeader}>
+                <Text style={gs.complexCardIcon}>{'\u2699\uFE0F'}</Text>
+                <View style={gs.complexCardBadge}>
+                  <Text style={gs.complexCardBadgeText}>Sortable</Text>
+                </View>
+              </View>
+              <Text style={gs.complexCardTitle}>Settings Panel</Text>
+              <Text style={gs.complexCardDesc}>
+                Reorderable preferences with toggle switches that work independently
+                of drag gestures. Built with SortableList.
               </Text>
               <Text style={gs.complexCardLink}>Open demo {'\u2192'}</Text>
             </View>
@@ -1933,8 +1964,13 @@ const gs = StyleSheet.create({
   // Complex examples section
   complexSection: {
     marginBottom: 48,
+    gap: 16,
+  },
+  complexSectionRow: {
+    flexDirection: 'row',
   },
   complexCard: {
+    flex: 1,
     backgroundColor: C.surface,
     borderWidth: 1,
     borderColor: C.border,
