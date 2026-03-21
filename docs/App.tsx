@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { KanbanDemo } from './KanbanDemo';
 import { SettingsDemo } from './SettingsDemo';
+import { CalendarDemo } from './CalendarDemo';
 import {
   Image,
   Linking,
@@ -1285,7 +1286,7 @@ function ApiSidebar({ ctx, activeItem, onSelect }: { ctx: ScrollCtx; activeItem:
 export default function App() {
   const { width } = useWindowDimensions();
   const isNarrow = width < 768;
-  const [page, setPage] = useState<'docs' | 'kanban' | 'settings'>('docs');
+  const [page, setPage] = useState<'docs' | 'kanban' | 'settings' | 'calendar'>('docs');
 
   const scrollRef = useRef<ScrollView>(null);
   const positionsRef = useRef<Record<string, number>>({});
@@ -1348,6 +1349,15 @@ export default function App() {
       <GestureHandlerRootView style={gs.root}>
         <StatusBar style="light" />
         <SettingsDemo onBack={() => setPage('docs')} />
+      </GestureHandlerRootView>
+    );
+  }
+
+  if (page === 'calendar') {
+    return (
+      <GestureHandlerRootView style={gs.root}>
+        <StatusBar style="light" />
+        <CalendarDemo onBack={() => setPage('docs')} />
       </GestureHandlerRootView>
     );
   }
@@ -1545,6 +1555,27 @@ export default function App() {
               <Text style={gs.complexCardDesc}>
                 Monitoring dashboard with draggable widget cards. Reorder priority,
                 hide/show widgets, sparkline charts. Built with SortableList.
+              </Text>
+              <Text style={gs.complexCardLink}>Open demo {'\u2192'}</Text>
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={gs.complexCard}
+            onPress={() => setPage('calendar')}
+            activeOpacity={0.8}
+          >
+            <View style={gs.complexCardInner}>
+              <View style={gs.complexCardHeader}>
+                <Text style={gs.complexCardIcon}>{'\uD83D\uDCC5'}</Text>
+                <View style={gs.complexCardBadge}>
+                  <Text style={gs.complexCardBadgeText}>Full app</Text>
+                </View>
+              </View>
+              <Text style={gs.complexCardTitle}>Calendar</Text>
+              <Text style={gs.complexCardDesc}>
+                Day, week, and month views. Drag events between days,
+                reorder within a day, add/edit events with type and color.
               </Text>
               <Text style={gs.complexCardLink}>Open demo {'\u2192'}</Text>
             </View>
