@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import Animated, {
@@ -530,6 +530,33 @@ export function SortableList<T>({
     scrollRef: scrollViewRef,
   });
 
+  // Register this container as a Droppable so external Draggables can target this list.
+  // Only active when inside a DndProvider (dndCtx non-null).
+  const containerDroppableId = `__sortable__${id}`;
+  const containerDroppableRect = useSharedValue<{ x: number; y: number; width: number; height: number } | null>(null);
+
+  useEffect(() => {
+    if (!dndCtx) return;
+    dndCtx.registerDroppable({
+      id: containerDroppableId,
+      data: { __sortableId: id },
+      disabled: false,
+      node: containerRef as any,
+      rect: containerDroppableRect,
+    });
+    return () => { dndCtx.unregisterDroppable(containerDroppableId); };
+  }, [dndCtx, containerDroppableId, id, containerRef, containerDroppableRect]);
+
+  // Wrap handleContainerLayout to also update the droppable rect in DndContext.
+  const handleContainerLayoutWithRect = useCallback((event: any) => {
+    handleContainerLayout(event);
+    if (dndCtx && containerRef.current) {
+      (containerRef.current as any).measureInWindow?.((x: number, y: number, w: number, h: number) => {
+        containerDroppableRect.value = { x, y, width: w, height: h };
+      });
+    }
+  }, [handleContainerLayout, dndCtx, containerRef, containerDroppableRect]);
+
   // Render items
   const items = data.map((item, index) => (
     <SortableItem
@@ -594,7 +621,7 @@ export function SortableList<T>({
         <View
           ref={containerRef}
           style={[sortableStyles.container, scrollContainerSize, style]}
-          onLayout={handleContainerLayout}
+          onLayout={handleContainerLayoutWithRect}
         >
           <Animated.ScrollView
             ref={scrollViewRef}
@@ -626,7 +653,7 @@ export function SortableList<T>({
       <View
         ref={containerRef}
         style={[localStyles.fixedContainer, fixedContainerSize, style]}
-        onLayout={handleContainerLayout}
+        onLayout={handleContainerLayoutWithRect}
       >
         {items}
         {indicator}
