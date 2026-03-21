@@ -674,13 +674,20 @@ function InsertionIndicator({ listId, prefixSum, direction, renderIndicator }: I
 
   if (state === null) return null;
 
-  // Show the indicator at the bottom edge of the target slot (i.e. above the
-  // next item). For same-list reorder the source ghost still occupies its slot,
-  // so +1 is needed. For cross-list drops the incoming item will push existing
-  // items down, so the indicator sits after the target index as well.
-  // Clamp to the last item's top edge so the indicator stays inside the list.
-  const lastItemIdx = Math.max(0, prefixSum.length - 2);
-  const posIdx = Math.min(state.idx + 1, lastItemIdx);
+  // prefixSum has n+1 entries for n items:
+  //   prefixSum[0] = 0 (top of first item)
+  //   prefixSum[i] = top of item i
+  //   prefixSum[n] = total height (bottom of last item)
+  //
+  // Same-list reorder: targetIndex is 0..n-1 (final position). The source
+  // ghost still occupies its slot, so the indicator goes at idx+1.
+  //
+  // Cross-list drop: targetIndex is 0..n (insertion point). The indicator
+  // goes directly at idx — 0 = above first item, n = after last item.
+  const maxIdx = prefixSum.length - 1;
+  const posIdx = state.sameList
+    ? Math.min(state.idx + 1, maxIdx)
+    : Math.min(state.idx, maxIdx);
   const position = prefixSum[posIdx] ?? 0;
 
   return (
