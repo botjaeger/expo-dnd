@@ -88,6 +88,7 @@ interface SortableItemProps<T> {
   dndAbsoluteY?: SharedValue<number>;
   dndOverId?: SharedValue<string | null>;
   dndRunCollision?: (activeId: string, absoluteX: number, absoluteY: number) => void;
+  dndMeasureDroppables?: () => void;
 }
 
 function SortableItemInner<T>({
@@ -122,6 +123,7 @@ function SortableItemInner<T>({
   dndAbsoluteY,
   dndOverId,
   dndRunCollision,
+  dndMeasureDroppables,
 }: SortableItemProps<T>) {
   const isActive = useSharedValue(false);
   const isPressing = useSharedValue(false);
@@ -209,6 +211,8 @@ function SortableItemInner<T>({
       // Write to DndContext bridge so external droppables see this drag
       if (dndActiveId) dndActiveId.value = itemId;
       if (dndIsDragging) dndIsDragging.value = true;
+      // Re-measure all droppable rects (may be stale after scroll)
+      if (dndMeasureDroppables) runOnJS(dndMeasureDroppables)();
 
       if (isScrollMode) {
         dragContentPosition.value = pixelPos;
@@ -555,9 +559,22 @@ export function SortableList<T>({
   const handleContainerLayoutWithRect = useCallback((event: any) => {
     handleContainerLayout(event);
     if (dndCtx && containerRef.current) {
-      (containerRef.current as any).measureInWindow?.((x: number, y: number, w: number, h: number) => {
-        containerDroppableRect.value = { x, y, width: w, height: h };
-      });
+      // On web, use getBoundingClientRect + scroll offset for page-relative coordinates.
+      // On native, measureInWindow gives screen-relative coordinates.
+      const node = containerRef.current as any;
+      if (typeof node.getBoundingClientRect === 'function') {
+        const domRect = node.getBoundingClientRect();
+        containerDroppableRect.value = {
+          x: domRect.left + window.scrollX,
+          y: domRect.top + window.scrollY,
+          width: domRect.width,
+          height: domRect.height,
+        };
+      } else if (node.measureInWindow) {
+        node.measureInWindow((x: number, y: number, w: number, h: number) => {
+          containerDroppableRect.value = { x, y, width: w, height: h };
+        });
+      }
     }
   }, [handleContainerLayout, dndCtx, containerRef, containerDroppableRect]);
 
@@ -669,6 +686,7 @@ export function SortableList<T>({
       dndAbsoluteY={dndCtx?.absoluteY}
       dndOverId={dndCtx?.overId}
       dndRunCollision={dndCtx?.runCollisionDetection}
+      dndMeasureDroppables={dndCtx?.measureDroppables}
     />
   ));
 

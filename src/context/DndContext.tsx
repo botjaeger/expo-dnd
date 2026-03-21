@@ -297,14 +297,26 @@ export function DndContextProvider({
       height: POINTER_SIZE,
     };
 
+    // On web, refresh droppable rects from DOM to handle scroll changes
     const droppableRects: CollisionRect[] = [];
     droppables.forEach((droppable, droppableId) => {
-      if (droppable.rect.value && !droppable.disabled) {
-        droppableRects.push({
-          id: droppableId,
-          rect: droppable.rect.value,
-          data: droppable.data,
-        });
+      if (droppable.disabled) return;
+
+      if (isWeb) {
+        const node = (droppable.node as any).current as HTMLElement | null;
+        if (node && typeof node.getBoundingClientRect === 'function') {
+          const domRect = node.getBoundingClientRect();
+          const freshRect = {
+            x: domRect.left + window.scrollX,
+            y: domRect.top + window.scrollY,
+            width: domRect.width,
+            height: domRect.height,
+          };
+          droppable.rect.value = freshRect;
+          droppableRects.push({ id: droppableId, rect: freshRect, data: droppable.data });
+        }
+      } else if (droppable.rect.value) {
+        droppableRects.push({ id: droppableId, rect: droppable.rect.value, data: droppable.data });
       }
     });
 
@@ -314,6 +326,10 @@ export function DndContextProvider({
     );
 
     const newOverId = collision?.id ?? null;
+    // DEBUG: log collision results
+    if (droppableRects.length > 0) {
+      console.log('[collision]', { activeItemId, newOverId, droppableCount: droppableRects.length, rects: droppableRects.map(r => ({ id: r.id, rect: r.rect })) });
+    }
     if (newOverId !== prevExternalOverIdRef.current) {
       overId.value = newOverId;
       prevExternalOverIdRef.current = newOverId;
