@@ -6,6 +6,6 @@ export const sortableStyles = StyleSheet.create({
   },
   content: {
     position: 'relative',
-    overflow: 'hidden',
+    overflow: 'visible',
   },
 });

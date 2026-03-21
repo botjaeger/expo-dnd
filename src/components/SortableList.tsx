@@ -131,6 +131,7 @@ function SortableItemInner<T>({
   const startPixelPos = useSharedValue(0);
   const startScrollOffset = useSharedValue(0);
   const gestureTranslation = useSharedValue(0);
+  const crossAxisTranslation = useSharedValue(0);
   const animatedPosition = useSharedValue(initialPixelPosition);
   const dragEndFired = useSharedValue(false);
   const isHorizontal = direction === 'horizontal';
@@ -205,6 +206,7 @@ function SortableItemInner<T>({
       startPixelPos.value = pixelPos;
       startScrollOffset.value = scrollOffset.value;
       gestureTranslation.value = 0;
+      crossAxisTranslation.value = 0;
       animatedPosition.value = pixelPos;
       dragEndFired.value = false;
 
@@ -227,6 +229,7 @@ function SortableItemInner<T>({
 
       const translation = isHorizontal ? event.translationX : event.translationY;
       gestureTranslation.value = translation;
+      crossAxisTranslation.value = isHorizontal ? event.translationY : event.translationX;
 
       // Calculate content position
       let rawContentPos = startPixelPos.value + translation;
@@ -332,12 +335,16 @@ function SortableItemInner<T>({
     const pressing = isPressing.value;
 
     let mainAxisPos: number;
+    let crossAxisPos = 0;
     if (active) {
       let raw = startPixelPos.value + gestureTranslation.value;
       if (isScrollMode) {
         raw += scrollOffset.value - startScrollOffset.value;
       }
-      mainAxisPos = clamp(raw, 0, totalSize - itemHeight);
+      // Don't clamp when active — allow item to leave container bounds for cross-list drag
+      mainAxisPos = raw;
+      // Allow cross-axis movement for cross-list dragging
+      crossAxisPos = isHorizontal ? crossAxisTranslation.value : crossAxisTranslation.value;
     } else {
       mainAxisPos = animatedPosition.value;
     }
@@ -352,7 +359,7 @@ function SortableItemInner<T>({
     return {
       position: 'absolute' as const,
       [isHorizontal ? 'left' : 'top']: mainAxisPos,
-      [isHorizontal ? 'top' : 'left']: 0,
+      [isHorizontal ? 'top' : 'left']: crossAxisPos,
       zIndex: active ? 9999 : pressing ? 9998 : 0,
       transform: [{ scale }],
       shadowColor: '#000',
