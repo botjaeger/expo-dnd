@@ -437,7 +437,7 @@ export function DndContextProvider({
 }
 
 const contextStyles = StyleSheet.create({
-  container: { position: 'relative' as const, overflow: 'visible' as const },
+  container: { flex: 1, position: 'relative' as const, overflow: 'visible' as const },
   overlayWrapper: {
     position: 'absolute',
     top: 0,
