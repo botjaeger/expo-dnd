@@ -1536,15 +1536,15 @@ export default function App() {
           >
             <View style={gs.complexCardInner}>
               <View style={gs.complexCardHeader}>
-                <Text style={gs.complexCardIcon}>{'\u2699\uFE0F'}</Text>
+                <Text style={gs.complexCardIcon}>{'\uD83D\uDCCA'}</Text>
                 <View style={gs.complexCardBadge}>
                   <Text style={gs.complexCardBadgeText}>Sortable</Text>
                 </View>
               </View>
-              <Text style={gs.complexCardTitle}>Settings Panel</Text>
+              <Text style={gs.complexCardTitle}>Dashboard Widgets</Text>
               <Text style={gs.complexCardDesc}>
-                Reorderable preferences with toggle switches that work independently
-                of drag gestures. Built with SortableList.
+                Monitoring dashboard with draggable widget cards. Reorder priority,
+                hide/show widgets, sparkline charts. Built with SortableList.
               </Text>
               <Text style={gs.complexCardLink}>Open demo {'\u2192'}</Text>
             </View>
