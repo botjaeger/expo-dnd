@@ -345,7 +345,7 @@ const s = StyleSheet.create({
     borderColor: C.border,
     borderRadius: 10,
     padding: 16,
-    marginBottom: 8,
+    marginBottom: 16,
   },
   widgetHeader: {
     flexDirection: 'row',
