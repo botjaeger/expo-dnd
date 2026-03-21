@@ -1273,6 +1273,7 @@ function ApiSidebar({ ctx, activeItem, onSelect }: { ctx: ScrollCtx; activeItem:
 export default function App() {
   const { width } = useWindowDimensions();
   const isNarrow = width < 768;
+  const isMedium = width >= 768 && width < 1024;
 
   const scrollRef = useRef<ScrollView>(null);
   const positionsRef = useRef<Record<string, number>>({});
@@ -1330,14 +1331,14 @@ export default function App() {
       <ScrollView
         ref={scrollRef}
         style={gs.scroll}
-        contentContainerStyle={[gs.content, isNarrow && gs.contentNarrow]}
+        contentContainerStyle={[gs.content, isMedium && gs.contentMedium, isNarrow && gs.contentNarrow]}
       >
         <View style={gs.navSpacer} />
 
         {/* ── Hero ────────────────────────────────── */}
-        <View style={hs.hero}>
+        <View style={[hs.hero, isMedium && hs.heroMedium]}>
           <Text style={hs.heroLabel}>expo-dnd</Text>
-          <Text style={[hs.heroTitle, isNarrow && hs.heroTitleNarrow]}>
+          <Text style={[hs.heroTitle, isMedium && hs.heroTitleMedium, isNarrow && hs.heroTitleNarrow]}>
             {'Cross-platform drag\u00A0& drop for React Native.'}
           </Text>
           <Text style={hs.heroPlatforms}>{'iOS \u00B7 Android \u00B7 Web'}</Text>
@@ -1844,6 +1845,7 @@ const gs = StyleSheet.create({
     alignSelf: 'center',
     width: '100%',
   },
+  contentMedium: { paddingHorizontal: 32 },
   contentNarrow: { paddingHorizontal: 20 },
   // Spacer so content clears the fixed nav on web; on native the nav is in-flow
   navSpacer: {
@@ -1894,6 +1896,8 @@ const hs = StyleSheet.create({
     marginBottom: 16,
     letterSpacing: -0.5,
   },
+  heroMedium: { paddingTop: 72, paddingBottom: 56 },
+  heroTitleMedium: { fontSize: 40, lineHeight: 48 },
   heroTitleNarrow: { fontSize: 32, lineHeight: 40 },
   heroPlatforms: {
     fontSize: 15,
