@@ -1205,7 +1205,6 @@ function Nav({ isNarrow, ctx, onKanban }: { isNarrow: boolean; ctx: ScrollCtx; o
               <View style={ns.mobileMenu}>
                 <TouchableOpacity onPress={goExamples}><Text style={ns.navLink}>Examples</Text></TouchableOpacity>
                 <TouchableOpacity onPress={goApi}><Text style={ns.navLink}>API</Text></TouchableOpacity>
-                <TouchableOpacity onPress={goKanban}><Text style={[ns.navLink, ns.navLinkAccent]}>Kanban</Text></TouchableOpacity>
                 <TouchableOpacity
                   style={ns.navBtnBorder}
                   onPress={() => Linking.openURL('https://github.com/botjaeger/expo-dnd')}
@@ -1494,6 +1493,32 @@ export default function App() {
           tabs={{ Setup: HOOKS_SETUP, Callbacks: HOOKS_CALLBACKS, Full: HOOKS_FULL }}
           isNarrow={isNarrow}
         />
+
+        {/* ── Complex Examples ─────────────────────── */}
+        <Text style={gs.sectionMarker}>{'// complex examples'}</Text>
+
+        <View style={gs.complexSection}>
+          <TouchableOpacity
+            style={gs.complexCard}
+            onPress={() => setPage('kanban')}
+            activeOpacity={0.8}
+          >
+            <View style={gs.complexCardInner}>
+              <View style={gs.complexCardHeader}>
+                <Text style={gs.complexCardIcon}>{'\u2630'}</Text>
+                <View style={gs.complexCardBadge}>
+                  <Text style={gs.complexCardBadgeText}>Interactive</Text>
+                </View>
+              </View>
+              <Text style={gs.complexCardTitle}>Kanban Board</Text>
+              <Text style={gs.complexCardDesc}>
+                Multi-column task board with drag between columns, tap-to-edit cards,
+                and auto-measuring heights. Built with DraggableListGroup.
+              </Text>
+              <Text style={gs.complexCardLink}>Open demo {'\u2192'}</Text>
+            </View>
+          </TouchableOpacity>
+        </View>
 
         {/* ── API Reference ────────────────────────── */}
         <View onLayout={trackLayout('api')}>
@@ -1904,6 +1929,64 @@ const gs = StyleSheet.create({
     color: C.dim,
     marginTop: 64,
     marginBottom: 48,
+  },
+  // Complex examples section
+  complexSection: {
+    marginBottom: 48,
+  },
+  complexCard: {
+    backgroundColor: C.surface,
+    borderWidth: 1,
+    borderColor: C.border,
+    borderRadius: 10,
+    maxWidth: 400,
+  },
+  complexCardInner: {
+    padding: 24,
+  },
+  complexCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 14,
+  },
+  complexCardIcon: {
+    fontSize: 20,
+    color: C.accent,
+  },
+  complexCardBadge: {
+    backgroundColor: C.accent + '18',
+    borderRadius: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  complexCardBadgeText: {
+    fontFamily: 'monospace',
+    fontSize: 10,
+    fontWeight: '600',
+    color: C.accent,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  complexCardTitle: {
+    fontFamily: 'monospace',
+    fontSize: 18,
+    fontWeight: '700',
+    color: C.text,
+    marginBottom: 8,
+  },
+  complexCardDesc: {
+    fontFamily: 'monospace',
+    fontSize: 12,
+    color: C.muted,
+    lineHeight: 20,
+    marginBottom: 16,
+  },
+  complexCardLink: {
+    fontFamily: 'monospace',
+    fontSize: 13,
+    fontWeight: '600',
+    color: C.accent,
   },
   footer: {
     marginTop: 64,
