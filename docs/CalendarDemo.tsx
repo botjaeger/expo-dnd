@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -420,13 +420,15 @@ function WeekView({
 
   const renderWeekItem = useCallback(
     ({ item, isDragging }: { item: CalEvent; isDragging: boolean }) => (
-      <View style={[s.weekCard, { borderLeftColor: item.color }, isDragging && s.eventBarDragging]}>
-        <Text style={s.weekCardTime}>{item.time}</Text>
-        <Text style={s.weekCardTitle} numberOfLines={1}>{item.title}</Text>
-        {item.desc ? <Text style={s.weekCardDesc} numberOfLines={2}>{item.desc}</Text> : null}
-      </View>
+      <TouchableOpacity onPress={() => onEditEvent(item)} activeOpacity={0.8}>
+        <View style={[s.weekCard, { borderLeftColor: item.color }, isDragging && s.eventBarDragging]}>
+          <Text style={s.weekCardTime}>{item.time}</Text>
+          <Text style={s.weekCardTitle} numberOfLines={1}>{item.title}</Text>
+          {item.desc ? <Text style={s.weekCardDesc} numberOfLines={2}>{item.desc}</Text> : null}
+        </View>
+      </TouchableOpacity>
     ),
-    []
+    [onEditEvent]
   );
 
   return (
@@ -552,6 +554,9 @@ export function CalendarDemo({ onBack }: { onBack: () => void }) {
   // Start on March 2026 to match seed events
   const [navDate, setNavDate] = useState(() => new Date(2026, 2, 1));
 
+  // Drag guard — prevents tap-to-edit from firing after a drag release
+  const justDroppedRef = useRef(false);
+
   // Form state
   const [formVisible, setFormVisible] = useState(false);
   const [editingEvent, setEditingEvent] = useState<CalEvent | null>(null);
@@ -595,6 +600,7 @@ export function CalendarDemo({ onBack }: { onBack: () => void }) {
   }, []);
 
   const handleEditEvent = useCallback((ev: CalEvent) => {
+    if (justDroppedRef.current) return;
     setEditingEvent(ev);
     setFormDefaultDate(ev.date);
     setFormVisible(true);
@@ -620,6 +626,8 @@ export function CalendarDemo({ onBack }: { onBack: () => void }) {
 
   // ── Cross-list drop handler ──────────────────────────────────────────────────
   const handleDrop = useCallback((dropEvent: DropEvent<CalEvent>) => {
+    justDroppedRef.current = true;
+    setTimeout(() => { justDroppedRef.current = false; }, 100);
     const { item, fromListId, fromIndex, toListId, toIndex } = dropEvent;
     if (fromListId === toListId) {
       // Same-day reorder — preserve order of other days, splice within this day
