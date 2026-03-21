@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
+  TextInput,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
@@ -102,6 +103,114 @@ const activeContainerStyle = {
   backgroundColor: C.accentBg,
 };
 
+// ── Tag presets ──────────────────────────────────────────────────────────────
+const TAG_PRESETS = [
+  { label: 'Feature', color: C.accent },
+  { label: 'Bug', color: C.red },
+  { label: 'Docs', color: C.teal },
+  { label: 'Design', color: C.purple },
+  { label: 'Perf', color: C.orange },
+  { label: 'Release', color: C.green },
+] as const;
+
+const COLUMN_OPTIONS: { id: ColumnId; label: string }[] = [
+  { id: 'todo', label: 'To Do' },
+  { id: 'progress', label: 'In Progress' },
+  { id: 'done', label: 'Done' },
+];
+
+// ── Add Card Form ────────────────────────────────────────────────────────────
+let nextId = 100;
+
+function AddCardForm({ onAdd, onCancel }: {
+  onAdd: (column: ColumnId, card: KanbanCard) => void;
+  onCancel: () => void;
+}) {
+  const [column, setColumn] = useState<ColumnId>('todo');
+  const [tagIdx, setTagIdx] = useState(0);
+  const [title, setTitle] = useState('');
+  const [desc, setDesc] = useState('');
+
+  const handleSubmit = () => {
+    if (!title.trim()) return;
+    const card: KanbanCard = {
+      id: `new-${nextId++}`,
+      title: title.trim(),
+      desc: desc.trim() || undefined,
+      tag: TAG_PRESETS[tagIdx],
+    };
+    onAdd(column, card);
+  };
+
+  return (
+    <View style={s.addForm}>
+      <Text style={s.addFormTitle}>Add Card</Text>
+
+      <Text style={s.addLabel}>Column</Text>
+      <View style={s.addOptions}>
+        {COLUMN_OPTIONS.map((opt) => (
+          <TouchableOpacity
+            key={opt.id}
+            style={[s.addOption, column === opt.id && s.addOptionActive]}
+            onPress={() => setColumn(opt.id)}
+            activeOpacity={0.7}
+          >
+            <Text style={[s.addOptionText, column === opt.id && s.addOptionTextActive]}>{opt.label}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      <Text style={s.addLabel}>Type</Text>
+      <View style={s.addOptions}>
+        {TAG_PRESETS.map((tag, i) => (
+          <TouchableOpacity
+            key={tag.label}
+            style={[s.addOption, tagIdx === i && { borderColor: tag.color, backgroundColor: tag.color + '18' }]}
+            onPress={() => setTagIdx(i)}
+            activeOpacity={0.7}
+          >
+            <Text style={[s.addOptionText, tagIdx === i && { color: tag.color }]}>{tag.label}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      <Text style={s.addLabel}>Title</Text>
+      <TextInput
+        style={s.addInput}
+        value={title}
+        onChangeText={setTitle}
+        placeholder="Card title"
+        placeholderTextColor={C.dim}
+      />
+
+      <Text style={s.addLabel}>Description (optional)</Text>
+      <TextInput
+        style={[s.addInput, s.addInputMulti]}
+        value={desc}
+        onChangeText={setDesc}
+        placeholder="Brief description"
+        placeholderTextColor={C.dim}
+        multiline
+        numberOfLines={2}
+      />
+
+      <View style={s.addActions}>
+        <TouchableOpacity style={s.addCancelBtn} onPress={onCancel} activeOpacity={0.7}>
+          <Text style={s.addCancelText}>Cancel</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[s.addSubmitBtn, !title.trim() && s.addSubmitBtnDisabled]}
+          onPress={handleSubmit}
+          activeOpacity={0.7}
+          disabled={!title.trim()}
+        >
+          <Text style={s.addSubmitText}>Add</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
 // ── Kanban Board ─────────────────────────────────────────────────────────────
 export function KanbanDemo({ onBack }: { onBack: () => void }) {
   const { width } = useWindowDimensions();
@@ -149,6 +258,13 @@ export function KanbanDemo({ onBack }: { onBack: () => void }) {
     setDone(INIT_DONE);
   }, []);
 
+  const [showAddForm, setShowAddForm] = useState(false);
+
+  const handleAddCard = useCallback((column: ColumnId, card: KanbanCard) => {
+    const list = [...getList(column), card];
+    setList(column, list);
+    setShowAddForm(false);
+  }, [getList, setList]);
 
   return (
     <View style={s.root}>
@@ -160,14 +276,25 @@ export function KanbanDemo({ onBack }: { onBack: () => void }) {
           </TouchableOpacity>
           <Text style={s.title}>Kanban Board</Text>
         </View>
-        <TouchableOpacity onPress={handleReset} activeOpacity={0.7}>
-          <Text style={s.resetBtn}>{'\u21BB'} Reset</Text>
-        </TouchableOpacity>
+        <View style={s.headerRight}>
+          <TouchableOpacity onPress={() => setShowAddForm(v => !v)} activeOpacity={0.7}>
+            <Text style={s.addBtn}>+ Add</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleReset} activeOpacity={0.7}>
+            <Text style={s.resetBtn}>{'\u21BB'} Reset</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <Text style={s.subtitle}>
         Drag cards between columns to move them. Long-press to pick up, drop to place.
       </Text>
+
+      {showAddForm && (
+        <View style={s.addFormWrap}>
+          <AddCardForm onAdd={handleAddCard} onCancel={() => setShowAddForm(false)} />
+        </View>
+      )}
 
       {/* Board */}
       <ScrollView style={s.scroll} contentContainerStyle={s.scrollContent}>
@@ -256,6 +383,17 @@ const s = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     color: C.text,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  addBtn: {
+    fontFamily: 'monospace',
+    fontSize: 12,
+    fontWeight: '600',
+    color: C.accent,
   },
   resetBtn: {
     fontFamily: 'monospace',
@@ -388,5 +526,112 @@ const s = StyleSheet.create({
     flex: 1,
     height: 2,
     backgroundColor: C.accent,
+  },
+
+  // Add card form
+  addFormWrap: {
+    paddingHorizontal: 24,
+    marginBottom: 16,
+  },
+  addForm: {
+    backgroundColor: C.surface,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: C.border,
+    padding: 16,
+  },
+  addFormTitle: {
+    fontFamily: 'monospace',
+    fontSize: 14,
+    fontWeight: '700',
+    color: C.text,
+    marginBottom: 16,
+  },
+  addLabel: {
+    fontFamily: 'monospace',
+    fontSize: 11,
+    fontWeight: '600',
+    color: C.dim,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 8,
+  },
+  addOptions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginBottom: 16,
+  },
+  addOption: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: C.border,
+    minHeight: 44,
+    justifyContent: 'center',
+  },
+  addOptionActive: {
+    borderColor: C.accent,
+    backgroundColor: C.accentBg,
+  },
+  addOptionText: {
+    fontFamily: 'monospace',
+    fontSize: 11,
+    color: C.muted,
+  },
+  addOptionTextActive: {
+    color: C.accent,
+    fontWeight: '600',
+  },
+  addInput: {
+    fontFamily: 'monospace',
+    fontSize: 13,
+    color: C.text,
+    backgroundColor: C.bg,
+    borderWidth: 1,
+    borderColor: C.border,
+    borderRadius: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 16,
+  },
+  addInputMulti: {
+    minHeight: 60,
+    textAlignVertical: 'top',
+  },
+  addActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 8,
+  },
+  addCancelBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 6,
+    minHeight: 44,
+    justifyContent: 'center',
+  },
+  addCancelText: {
+    fontFamily: 'monospace',
+    fontSize: 12,
+    color: C.dim,
+  },
+  addSubmitBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 6,
+    backgroundColor: C.accent,
+    minHeight: 44,
+    justifyContent: 'center',
+  },
+  addSubmitBtnDisabled: {
+    opacity: 0.4,
+  },
+  addSubmitText: {
+    fontFamily: 'monospace',
+    fontSize: 12,
+    fontWeight: '600',
+    color: C.textInverse,
   },
 });
