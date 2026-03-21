@@ -43,6 +43,8 @@ export interface AutoSortableProps<T> {
   dragEffect?: import('../animations/dragEffects').DragEffect | import('../animations/dragEffects').DragEffectConfig;
   /** Long press duration in ms before drag activates (default: 200) */
   longPressDuration?: number;
+  /** Called when an item is tapped (not dragged). Suppressed after a drag completes. */
+  onItemPress?: (item: T, index: number) => void;
 }
 
 // ============ AutoSortable ============

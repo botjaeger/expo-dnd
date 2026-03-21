@@ -15,7 +15,7 @@ import { useLayoutMeasurement } from './useLayoutMeasurement';
 import { rectIntersection } from '../collision/rectIntersection';
 import type { CollisionRect } from '../collision/types';
 import type { LayoutRect } from '../context/types';
-import { Gesture, type GestureType } from 'react-native-gesture-handler';
+import { Gesture, type GestureType, type ComposedGesture } from 'react-native-gesture-handler';
 import { isWeb } from '../utils/platform';
 
 export interface UseDraggableProps {
@@ -27,13 +27,15 @@ export interface UseDraggableProps {
   activeDragStyle?: ViewStyle;
   /** Long press duration in ms before drag activates (default: 200) */
   longPressDuration?: number;
+  /** Called when the item is tapped (not dragged). Suppressed after a drag completes. */
+  onPress?: () => void;
 }
 
 export interface UseDraggableReturn {
   /** Ref to attach to the draggable view */
   ref: AnimatedRef<View>;
   /** Gesture handler to attach via GestureDetector */
-  gesture: GestureType;
+  gesture: GestureType | ComposedGesture;
   /** Whether this item is currently being dragged */
   isDragging: SharedValue<boolean>;
   /** Animated style to apply for drag translation and visual feedback */
@@ -46,7 +48,7 @@ export interface UseDraggableReturn {
  * Hook that makes an element draggable
  */
 export function useDraggable(props: UseDraggableProps): UseDraggableReturn {
-  const { id, data, disabled = false, activeDragStyle, longPressDuration } = props;
+  const { id, data, disabled = false, activeDragStyle, longPressDuration, onPress } = props;
   const context = useDndContext();
   const { ref, rect, handleLayout, triggerMeasure } = useLayoutMeasurement();
   const prevOverIdRef = useRef<string | null>(null);
@@ -257,7 +259,7 @@ export function useDraggable(props: UseDraggableProps): UseDraggableReturn {
   }, [id, data, context]);
 
   // Set up pan gesture - each draggable has its own gesture
-  const gesture = Gesture.Pan()
+  const panGesture = Gesture.Pan()
     .enabled(!disabled)
     .activateAfterLongPress(longPressDuration ?? 200)
     .mouseButton(1) // LEFT mouse button for web
@@ -331,6 +333,19 @@ export function useDraggable(props: UseDraggableProps): UseDraggableReturn {
         context.absoluteY.value = 0;
       }
     });
+
+  const tapGesture = onPress
+    ? Gesture.Tap()
+        .enabled(!disabled)
+        .onEnd(() => {
+          'worklet';
+          runOnJS(onPress)();
+        })
+    : null;
+
+  const gesture = tapGesture
+    ? Gesture.Exclusive(panGesture, tapGesture)
+    : panGesture;
 
   // Animated style for THIS draggable only.
   // When dragging, the original becomes a ghost (no transform, reduced opacity).

@@ -88,6 +88,8 @@ export interface DraggableListProps<T> {
   dragEffect?: import('../animations/dragEffects').DragEffect | import('../animations/dragEffects').DragEffectConfig;
   /** Long press duration in ms before drag activates (default: 200) */
   longPressDuration?: number;
+  /** Called when an item is tapped (not dragged). Suppressed after a drag completes. */
+  onItemPress?: (item: T, index: number) => void;
 }
 
 export interface DraggableListGroupProps<T> {
@@ -515,6 +517,7 @@ interface DraggableListItemProps<T> {
   dragEffect?: import('../animations/dragEffects').DragEffectConfig;
   renderItem: (info: DraggableListItemInfo<T>) => React.ReactNode;
   longPressDuration?: number;
+  onItemPress?: (item: T, index: number) => void;
 }
 
 function DraggableListItemInner<T>({
@@ -532,6 +535,7 @@ function DraggableListItemInner<T>({
   dragEffect,
   renderItem,
   longPressDuration,
+  onItemPress,
 }: DraggableListItemProps<T>) {
   const context = useDraggableListContext<T>();
   const isHorizontal = direction === 'horizontal';
@@ -622,6 +626,10 @@ function DraggableListItemInner<T>({
     ? { width: itemHeight, height: '100%' as const }
     : { height: itemHeight, width: '100%' as const };
 
+  const handlePress = useCallback(() => {
+    onItemPress?.(item, index);
+  }, [onItemPress, item, index]);
+
   return (
     <Animated.View style={[sizeStyle, positionedStyle] as any}>
       <Draggable
@@ -631,6 +639,7 @@ function DraggableListItemInner<T>({
         _skipDragStyle
         dragEffect={dragEffect}
         longPressDuration={longPressDuration}
+        onPress={onItemPress ? handlePress : undefined}
       >
         <View style={sizeStyle}>
           <DraggableListItemRenderer
@@ -731,6 +740,7 @@ export function DraggableList<T>({
   renderInsertIndicator,
   dragEffect: dragEffectProp,
   longPressDuration,
+  onItemPress,
 }: DraggableListProps<T>) {
   const resolvedDragEffect: DragEffectConfig | undefined = dragEffectProp
     ? resolveDragEffect(dragEffectProp)
@@ -957,6 +967,7 @@ export function DraggableList<T>({
       dragEffect={resolvedDragEffect}
       renderItem={renderItem}
       longPressDuration={longPressDuration}
+      onItemPress={onItemPress}
     />
   ));
 

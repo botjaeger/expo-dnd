@@ -47,6 +47,8 @@ interface SortableListProps<T> {
   dragEffect?: import('../animations/dragEffects').DragEffect | import('../animations/dragEffects').DragEffectConfig;
   /** Long press duration in ms before drag activates (default: 200) */
   longPressDuration?: number;
+  /** Called when an item is tapped (not dragged). Suppressed after a drag completes. */
+  onItemPress?: (item: T, index: number) => void;
 }
 
 // ============ SortableItem (unified for fixed + scroll) ============
@@ -79,6 +81,7 @@ interface SortableItemProps<T> {
   onDragMove: (id: string, overIndex: number, position: number) => void;
   onDragEnd: (id: string, fromIndex: number, toIndex: number) => void;
   longPressDuration?: number;
+  onItemPress?: (item: T, index: number) => void;
 }
 
 function SortableItemInner<T>({
@@ -108,6 +111,7 @@ function SortableItemInner<T>({
   onDragMove,
   onDragEnd,
   longPressDuration,
+  onItemPress,
 }: SortableItemProps<T>) {
   const isActive = useSharedValue(false);
   const isPressing = useSharedValue(false);
@@ -284,6 +288,17 @@ function SortableItemInner<T>({
       }
     });
 
+  const tapGesture = onItemPress
+    ? Gesture.Tap().onEnd(() => {
+        'worklet';
+        runOnJS(onItemPress)(item, originalIndex);
+      })
+    : null;
+
+  const gesture = tapGesture
+    ? Gesture.Exclusive(panGesture, tapGesture)
+    : panGesture;
+
   const animatedStyle = useAnimatedStyle(() => {
     const active = isActive.value;
     const pressing = isPressing.value;
@@ -343,7 +358,7 @@ function SortableItemInner<T>({
     );
   }
 
-  return <GestureDetector gesture={panGesture}>{content}</GestureDetector>;
+  return <GestureDetector gesture={gesture}>{content}</GestureDetector>;
 }
 
 const SortableItem = React.memo(SortableItemInner) as typeof SortableItemInner;
@@ -443,6 +458,7 @@ export function SortableList<T>({
   onDragMove: onDragMoveProp,
   onDragEnd: onDragEndProp,
   longPressDuration,
+  onItemPress,
 }: SortableListProps<T>) {
   const dragEffectConfig = dragEffectProp ? resolveDragEffect(dragEffectProp) : undefined;
   const scrollViewRef = useAnimatedRef<Animated.ScrollView>();
@@ -522,6 +538,7 @@ export function SortableList<T>({
       onDragMove={handleDragMove}
       onDragEnd={handleDragEnd}
       longPressDuration={longPressDuration}
+      onItemPress={onItemPress}
     />
   ));
 

@@ -71,6 +71,8 @@ interface SortableFlatListProps<T> {
   renderInsertIndicator?: (index: number) => React.ReactNode;
   /** Animation effect applied to the drag overlay when picked up */
   dragEffect?: DragEffect | DragEffectConfig;
+  /** Called when an item is tapped (not dragged). Suppressed after a drag completes. */
+  onItemPress?: (item: T, index: number) => void;
 }
 
 type SortableRenderItem<T> = SortableFlatListProps<T>['renderItem'];
@@ -115,6 +117,7 @@ interface FlatListHandleGestureConfig<T> {
   onDragMove: (id: string, overIndex: number, position: number) => void;
   onDragEnd: (id: string, fromIndex: number, toIndex: number) => void;
   scrollGesture?: ReturnType<typeof Gesture.Native>;
+  onItemPress?: (item: T, index: number) => void;
 }
 
 function FlatListCellItemInner<T>({
@@ -184,6 +187,7 @@ function FlatListCellItemInner<T>({
   const handleOnDragMove = handleGestureConfig?.onDragMove;
   const handleOnDragEnd = handleGestureConfig?.onDragEnd;
   const handleScrollGesture = handleGestureConfig?.scrollGesture;
+  const handleOnItemPress = handleGestureConfig?.onItemPress;
 
   const animatedStyle = useAnimatedStyle(() => {
     if (isThisItemActive.value) {
@@ -259,7 +263,7 @@ function FlatListCellItemInner<T>({
     ? { width: itemHeight, height: '100%' as const }
     : { height: itemHeight, width: '100%' as const };
 
-  let dragHandleGesture: ReturnType<typeof Gesture.Pan> | null = null;
+  let dragHandleGesture: ReturnType<typeof Gesture.Pan> | ReturnType<typeof Gesture.Exclusive> | null = null;
   if (
     handleEnabled &&
     handleIsActiveGesture &&
@@ -378,7 +382,15 @@ function FlatListCellItemInner<T>({
       panGesture = panGesture.simultaneousWithExternalGesture(handleScrollGesture);
     }
 
-    dragHandleGesture = panGesture;
+    if (handleOnItemPress) {
+      const tapGesture = Gesture.Tap().onEnd(() => {
+        'worklet';
+        runOnJS(handleOnItemPress)(item, originalIndex);
+      });
+      dragHandleGesture = Gesture.Exclusive(panGesture, tapGesture);
+    } else {
+      dragHandleGesture = panGesture;
+    }
   }
 
   const content = (
@@ -582,6 +594,7 @@ interface GestureWrapperProps<T> {
   onDragMove: (id: string, overIndex: number, position: number) => void;
   onDragEnd: (id: string, fromIndex: number, toIndex: number) => void;
   scrollGesture?: ReturnType<typeof Gesture.Native>;
+  onItemPress?: (item: T, index: number) => void;
   children: React.ReactNode;
 }
 
@@ -616,6 +629,7 @@ function GestureWrapper<T>({
   onDragMove,
   onDragEnd,
   scrollGesture,
+  onItemPress,
   children,
 }: GestureWrapperProps<T>) {
   const isHorizontal = direction === 'horizontal';
@@ -795,7 +809,35 @@ function GestureWrapper<T>({
     panGesture = panGesture.simultaneousWithExternalGesture(scrollGesture);
   }
 
-  const gesture = panGesture;
+  // JS-thread callback to resolve tapped item by position and fire onItemPress
+  const handleTap = useCallback((x: number, y: number) => {
+    const touchPos = isHorizontal ? x : y;
+    const contentPos = touchPos + scrollOffset.value;
+    const pressedIndex = getIndexAtPosition(currentPrefixSum.value, contentPos, itemCount);
+    if (pressedIndex < 0 || pressedIndex >= itemCount) return;
+
+    const itemIds = Object.entries(positions.value);
+    for (const [itemId, pos] of itemIds) {
+      if (pos === pressedIndex) {
+        const dataIndex = data.findIndex((d) => keyExtractor(d) === itemId);
+        if (dataIndex >= 0 && onItemPress) {
+          onItemPress(data[dataIndex], dataIndex);
+        }
+        break;
+      }
+    }
+  }, [data, keyExtractor, isHorizontal, scrollOffset, currentPrefixSum, positions, itemCount, onItemPress]);
+
+  const tapGesture = onItemPress
+    ? Gesture.Tap().onEnd((event) => {
+        'worklet';
+        runOnJS(handleTap)(event.x, event.y);
+      })
+    : null;
+
+  const gesture = tapGesture
+    ? Gesture.Exclusive(panGesture, tapGesture)
+    : panGesture;
 
   return (
     <GestureDetector gesture={gesture}>
@@ -948,6 +990,7 @@ interface SortableFlatListScrollModeRendererProps<T> {
   overlayNode: React.ReactNode;
   renderItem: SortableRenderItem<T>;
   renderInsertIndicator?: (index: number) => React.ReactNode;
+  onItemPress?: (item: T, index: number) => void;
 }
 
 function SortableFlatListScrollModeRenderer<T>({
@@ -993,6 +1036,7 @@ function SortableFlatListScrollModeRenderer<T>({
   overlayNode,
   renderItem,
   renderInsertIndicator,
+  onItemPress,
 }: SortableFlatListScrollModeRendererProps<T>) {
   const wrapperProps: Omit<GestureWrapperProps<T>, 'children'> = {
     data,
@@ -1025,6 +1069,7 @@ function SortableFlatListScrollModeRenderer<T>({
     onDragMove: handleDragMove,
     onDragEnd: handleDragEnd,
     scrollGesture: nativeScrollGesture,
+    onItemPress,
   };
 
   const indicator = renderInsertIndicator ? (
@@ -1306,6 +1351,7 @@ export function SortableFlatList<T>({
   onDragStart: onDragStartProp,
   onDragMove: onDragMoveProp,
   onDragEnd: onDragEndProp,
+  onItemPress,
 }: SortableFlatListProps<T>) {
   const dragEffect = dragEffectProp ? resolveDragEffect(dragEffectProp) : undefined;
   const flatListRef = useAnimatedRef<FlatList<T>>();
@@ -1425,6 +1471,7 @@ export function SortableFlatList<T>({
       onDragMove: handleDragMove,
       onDragEnd: handleDragEnd,
       scrollGesture: nativeScrollGesture,
+      onItemPress,
     };
   }, [
     isScrollMode,
@@ -1448,6 +1495,7 @@ export function SortableFlatList<T>({
     handleDragMove,
     handleDragEnd,
     nativeScrollGesture,
+    onItemPress,
   ]);
   const { flatListRenderItem, getItemLayout } = useSortableFlatListRenderHelpers({
     data,
@@ -1551,6 +1599,7 @@ export function SortableFlatList<T>({
         overlayNode={overlayHost}
         renderItem={renderItem}
         renderInsertIndicator={renderInsertIndicator}
+        onItemPress={onItemPress}
       />
     );
   }
@@ -1598,6 +1647,7 @@ export function SortableFlatList<T>({
             onDragStart={handleDragStart}
             onDragMove={handleDragMove}
             onDragEnd={handleDragEnd}
+            onItemPress={onItemPress}
           />
         ))}
         {renderInsertIndicator && (

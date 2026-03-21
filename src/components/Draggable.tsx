@@ -26,7 +26,7 @@ export interface DraggableProps extends UseDraggableProps {
   handle?: boolean;
   /** @internal Skip default drag opacity — used by DraggableList which manages its own */
   _skipDragStyle?: boolean;
-  // activeDragStyle and longPressDuration are inherited from UseDraggableProps
+  // activeDragStyle, longPressDuration, and onPress are inherited from UseDraggableProps
   /** Animation effect applied to this item's drag overlay. Overrides the DndProvider-level dragEffect. */
   dragEffect?: DragEffect | DragEffectConfig;
 }
@@ -53,6 +53,7 @@ export function Draggable({
   _skipDragStyle,
   activeDragStyle,
   longPressDuration,
+  onPress,
   dragEffect,
 }: DraggableProps) {
   const context = useDndContext();
@@ -62,6 +63,7 @@ export function Draggable({
     disabled,
     activeDragStyle,
     longPressDuration,
+    onPress,
   });
 
   // Keep a stable ref to the latest children/style so the renderer closure

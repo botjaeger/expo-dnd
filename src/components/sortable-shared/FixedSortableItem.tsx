@@ -44,6 +44,7 @@ function FixedSortableItemInner<T>({
   onDragStart,
   onDragMove,
   onDragEnd,
+  onItemPress,
 }: FixedSortableItemProps<T>) {
   const isActive = useSharedValue(false);
   const isPressing = useSharedValue(false);
@@ -210,7 +211,16 @@ function FixedSortableItemInner<T>({
       }
     });
 
-  const gesture = panGesture;
+  const tapGesture = onItemPress
+    ? Gesture.Tap().onEnd(() => {
+        'worklet';
+        runOnJS(onItemPress)(item, originalIndex);
+      })
+    : null;
+
+  const gesture = tapGesture
+    ? Gesture.Exclusive(panGesture, tapGesture)
+    : panGesture;
 
   const animatedStyle = useAnimatedStyle(() => {
     const active = isActive.value;
