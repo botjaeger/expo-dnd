@@ -5,12 +5,12 @@ import Animated, {
   useAnimatedStyle,
   useAnimatedReaction,
   useAnimatedRef,
-  withSpring,
   runOnJS,
   measure,
   runOnUI,
   type AnimatedRef,
 } from 'react-native-reanimated';
+import { withSpringRM } from '../utils/motion';
 import type {
   DndContextValue,
   DraggableDescriptor,
@@ -76,7 +76,7 @@ function DragOverlayLayer({
       const itemEffect = dragEffectRegistry.current.get(activeIdState) ?? dragEffect;
       if (itemEffect) {
         overlayScale.value = 1;
-        overlayScale.value = withSpring(itemEffect.scale, itemEffect.spring);
+        overlayScale.value = withSpringRM(itemEffect.scale, itemEffect.spring);
       }
     } else {
       overlayScale.value = 1;
