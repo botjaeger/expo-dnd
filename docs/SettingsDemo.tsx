@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   useWindowDimensions,
 } from 'react-native';
-import { SortableList } from '../src';
+import { SortableList, DragHandle } from '../src';
 
 // ── Color palette ────────────────────────────────────────────────────────────
 const C = {
@@ -99,7 +99,13 @@ export function SettingsDemo({ onBack }: { onBack: () => void }) {
   const renderWidget = useCallback(({ item }: { item: Widget; index: number; isDragging: boolean }) => (
     <View style={s.widget}>
       <View style={s.widgetHeader}>
-        {editMode && <Text style={s.grip}>{'\u2807'}</Text>}
+        {editMode && (
+          <DragHandle>
+            <View style={s.gripWrap}>
+              <Text style={s.grip}>{'\u2807'}</Text>
+            </View>
+          </DragHandle>
+        )}
         <Text style={s.widgetTitle}>{item.title}</Text>
         {editMode && (
           <TouchableOpacity onPress={() => toggleVisibility(item.id)} activeOpacity={0.7}>
@@ -154,13 +160,14 @@ export function SettingsDemo({ onBack }: { onBack: () => void }) {
         {editMode ? (
           <>
             <Text style={s.sectionLabel}>Visible widgets</Text>
-            <Text style={s.sectionHint}>Long-press to reorder. Tap {'\u2212'} to hide.</Text>
+            <Text style={s.sectionHint}>Drag the {'\u2807'} handle to reorder. Tap {'\u2212'} to hide.</Text>
             <View style={s.listWrap}>
               <SortableList
                 data={visibleWidgets}
                 keyExtractor={(w) => w.id}
                 direction="vertical"
                 dragEffect="pickup"
+                handle
                 renderItem={renderWidget}
                 renderInsertIndicator={() => (
                   <View style={s.insertBar}>
@@ -351,6 +358,11 @@ const s = StyleSheet.create({
     fontSize: 12,
     color: C.muted,
     flex: 1,
+  },
+  gripWrap: {
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+    cursor: 'grab' as any,
   },
   grip: {
     fontSize: 18,
