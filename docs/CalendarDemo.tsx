@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   useWindowDimensions,
 } from 'react-native';
-import { DraggableListGroup, AutoDraggableList } from '../src';
+import { DraggableListGroup, AutoDraggableList, SortableList } from '../src';
 import type { DropEvent } from '../src';
 
 // ── Color palette ─────────────────────────────────────────────────────────────
@@ -497,49 +497,53 @@ function WeekView({
 function DayView({
   events,
   dayDate,
+  onReorder,
+  onEditEvent,
   onAddForDate,
 }: {
   events: CalEvent[];
   dayDate: Date;
+  onReorder: (data: CalEvent[]) => void;
+  onEditEvent: (ev: CalEvent) => void;
   onAddForDate: (date: string) => void;
 }) {
   const ymd = toYMD(dayDate);
   const dayEvents = events.filter((e) => e.date === ymd);
 
-  // Time slots from 8am to 8pm
-  const timeSlots = Array.from({ length: 13 }, (_, i) => {
-    const hour = i + 8;
-    const ampm = hour >= 12 ? 'pm' : 'am';
-    const h = hour > 12 ? hour - 12 : hour;
-    return `${h}:00${ampm}`;
-  });
+  const renderItem = useCallback(
+    ({ item, isDragging }: { item: CalEvent; index: number; isDragging: boolean }) => (
+      <View style={[s.dayEvent, { borderLeftColor: item.color }, isDragging && s.eventBarDragging]}>
+        <Text style={s.dayEventTime}>{item.time}</Text>
+        <Text style={s.dayEventTitle}>{item.title}</Text>
+        {item.desc ? <Text style={s.dayEventDesc}>{item.desc}</Text> : null}
+      </View>
+    ),
+    []
+  );
+
+  const handleItemPress = useCallback(
+    (item: CalEvent) => { onEditEvent(item); },
+    [onEditEvent]
+  );
 
   return (
     <View style={s.dayView}>
-      {timeSlots.map((slot) => {
-        const slotEvents = dayEvents.filter((e) => {
-          const eventHour = parseInt(e.time);
-          const isPM = e.time.toLowerCase().includes('pm');
-          const hour24 = isPM && eventHour !== 12 ? eventHour + 12 : eventHour;
-          const slotHour = parseInt(slot);
-          const slotIsPM = slot.includes('pm');
-          const slotHour24 = slotIsPM && slotHour !== 12 ? slotHour + 12 : slotHour;
-          return hour24 === slotHour24;
-        });
-
-        return (
-          <View key={slot} style={s.timeSlotRow}>
-            <Text style={s.timeSlotLabel}>{slot}</Text>
-            <View style={s.timeSlotContent}>
-              {slotEvents.map((ev) => (
-                <View key={ev.id} style={[s.dayEvent, { backgroundColor: ev.color }]}>
-                  <Text style={s.dayEventText}>{ev.title}</Text>
-                </View>
-              ))}
-            </View>
+      <SortableList<CalEvent>
+        data={dayEvents}
+        keyExtractor={(item) => `${item.id}-${(item.desc ?? '').length}`}
+        direction="vertical"
+        dragEffect="pickup"
+        renderItem={renderItem}
+        onItemPress={handleItemPress}
+        renderInsertIndicator={() => (
+          <View style={s.insertBar}>
+            <View style={s.insertDot} />
+            <View style={s.insertLine} />
+            <View style={s.insertDot} />
           </View>
-        );
-      })}
+        )}
+        onReorder={(data) => onReorder(data)}
+      />
 
       <TouchableOpacity style={s.dayAddBtn} onPress={() => onAddForDate(ymd)} activeOpacity={0.7}>
         <Text style={s.dayAddBtnText}>+ Add event</Text>
@@ -747,6 +751,14 @@ export function CalendarDemo({ onBack }: { onBack: () => void }) {
           <DayView
             events={events}
             dayDate={navDate}
+            onReorder={(data) => {
+              const ymd = toYMD(navDate);
+              setEvents(prev => {
+                const others = prev.filter(e => e.date !== ymd);
+                return [...others, ...data];
+              });
+            }}
+            onEditEvent={handleEditEvent}
             onAddForDate={openAdd}
           />
         )}
@@ -1321,15 +1333,30 @@ const s = StyleSheet.create({
     gap: 2,
   },
   dayEvent: {
-    borderRadius: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 6,
+    backgroundColor: C.surfaceHigh,
+    borderRadius: 8,
+    borderLeftWidth: 4,
+    padding: 12,
+    marginBottom: 8,
   },
-  dayEventText: {
+  dayEventTime: {
+    fontFamily: 'monospace',
+    fontSize: 11,
+    color: C.dim,
+    marginBottom: 2,
+  },
+  dayEventTitle: {
+    fontFamily: 'monospace',
+    fontSize: 14,
+    fontWeight: '600',
+    color: C.text,
+  },
+  dayEventDesc: {
     fontFamily: 'monospace',
     fontSize: 12,
-    fontWeight: '500',
-    color: '#fff',
+    color: C.muted,
+    marginTop: 4,
+    lineHeight: 18,
   },
   dayAddBtn: {
     alignSelf: 'center',
