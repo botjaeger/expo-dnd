@@ -83,14 +83,11 @@ export function useDroppable(props: UseDroppableProps): UseDroppableReturn {
     }
   );
 
-  // Animated style for visual feedback
+  // Animated style: subtle opacity hint on hover plus optional scale effect.
+  // Consumers can override visual feedback via the `activeStyle` prop on <Droppable>.
   const activeStyle = useAnimatedStyle(() => {
-    const hovering = isOver.value;
-
     return {
-      borderWidth: hovering ? 2 : 0,
-      borderColor: hovering ? '#4CAF50' : 'transparent',
-      backgroundColor: hovering ? 'rgba(76, 175, 80, 0.1)' : 'transparent',
+      opacity: isOver.value ? 0.85 : 1,
       transform: [{ scale: dropScale.value }],
     };
   }, [isOver, dropScale]);

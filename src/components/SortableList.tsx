@@ -45,6 +45,10 @@ interface SortableListProps<T> {
   activeDragStyle?: import('react-native').ViewStyle;
   renderInsertIndicator?: (index: number) => React.ReactNode;
   dragEffect?: import('../animations/dragEffects').DragEffect | import('../animations/dragEffects').DragEffectConfig;
+  /** Long press duration in ms before drag activates (default: 200) */
+  longPressDuration?: number;
+  /** Called when an item is tapped (not dragged). Suppressed after a drag completes. */
+  onItemPress?: (item: T, index: number) => void;
 }
 
 // ============ SortableItem (unified for fixed + scroll) ============
@@ -76,6 +80,8 @@ interface SortableItemProps<T> {
   onDragStart: (id: string, index: number) => void;
   onDragMove: (id: string, overIndex: number, position: number) => void;
   onDragEnd: (id: string, fromIndex: number, toIndex: number) => void;
+  longPressDuration?: number;
+  onItemPress?: (item: T, index: number) => void;
 }
 
 function SortableItemInner<T>({
@@ -104,6 +110,8 @@ function SortableItemInner<T>({
   onDragStart,
   onDragMove,
   onDragEnd,
+  longPressDuration,
+  onItemPress,
 }: SortableItemProps<T>) {
   const isActive = useSharedValue(false);
   const isPressing = useSharedValue(false);
@@ -167,7 +175,7 @@ function SortableItemInner<T>({
   );
 
   const panGesture = Gesture.Pan()
-    .activateAfterLongPress(LONG_PRESS_DURATION)
+    .activateAfterLongPress(longPressDuration ?? LONG_PRESS_DURATION)
     .onBegin(() => {
       'worklet';
       isPressing.value = true;
@@ -280,6 +288,17 @@ function SortableItemInner<T>({
       }
     });
 
+  const tapGesture = onItemPress
+    ? Gesture.Tap().onEnd(() => {
+        'worklet';
+        runOnJS(onItemPress)(item, originalIndex);
+      })
+    : null;
+
+  const gesture = tapGesture
+    ? Gesture.Exclusive(panGesture, tapGesture)
+    : panGesture;
+
   const animatedStyle = useAnimatedStyle(() => {
     const active = isActive.value;
     const pressing = isPressing.value;
@@ -339,7 +358,7 @@ function SortableItemInner<T>({
     );
   }
 
-  return <GestureDetector gesture={panGesture}>{content}</GestureDetector>;
+  return <GestureDetector gesture={gesture}>{content}</GestureDetector>;
 }
 
 const SortableItem = React.memo(SortableItemInner) as typeof SortableItemInner;
@@ -428,7 +447,7 @@ export function SortableList<T>({
   keyExtractor,
   itemSize,
   containerSize,
-  direction = 'horizontal',
+  direction = 'vertical',
   autoScrollThreshold = AUTO_SCROLL_THRESHOLD,
   style,
   handle,
@@ -438,6 +457,8 @@ export function SortableList<T>({
   onDragStart: onDragStartProp,
   onDragMove: onDragMoveProp,
   onDragEnd: onDragEndProp,
+  longPressDuration,
+  onItemPress,
 }: SortableListProps<T>) {
   const dragEffectConfig = dragEffectProp ? resolveDragEffect(dragEffectProp) : undefined;
   const scrollViewRef = useAnimatedRef<Animated.ScrollView>();
@@ -516,6 +537,8 @@ export function SortableList<T>({
       onDragStart={handleDragStart}
       onDragMove={handleDragMove}
       onDragEnd={handleDragEnd}
+      longPressDuration={longPressDuration}
+      onItemPress={onItemPress}
     />
   ));
 

@@ -1,4 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { KanbanDemo } from './KanbanDemo';
+import { SettingsDemo } from './SettingsDemo';
+import { CalendarDemo } from './CalendarDemo';
 import {
   Image,
   Linking,
@@ -1171,16 +1174,28 @@ function CtaButton({ label, href, primary, onPress }: { label: string; href?: st
 }
 
 // ── Nav ───────────────────────────────────────────────────────────────────────
-function Nav({ isNarrow, ctx }: { isNarrow: boolean; ctx: ScrollCtx }) {
+function Nav({ isNarrow, ctx, onKanban }: { isNarrow: boolean; ctx: ScrollCtx; onKanban?: () => void }) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   const goExamples = () => { ctx.scrollTo(ctx.positions.examples ?? 0); setMenuOpen(false); };
   const goApi = () => { ctx.scrollTo(ctx.positions.api ?? 0); setMenuOpen(false); };
+  const goKanban = () => { setMenuOpen(false); onKanban?.(); };
 
   return (
     <View style={ns.nav}>
       <View style={ns.navInner}>
-        <Text style={ns.logo}>expo-dnd</Text>
+        <View style={ns.logoRow}>
+          <Text style={ns.logo}>expo-dnd</Text>
+          <TouchableOpacity
+            onPress={() => Linking.openURL('https://github.com/botjaeger/expo-dnd')}
+            activeOpacity={0.7}
+          >
+            <Image
+              source={{ uri: 'https://img.shields.io/github/stars/botjaeger/expo-dnd?style=flat&color=3b82f6&labelColor=141414' }}
+              style={ns.starBadge}
+            />
+          </TouchableOpacity>
+        </View>
 
         {isNarrow ? (
           <>
@@ -1220,6 +1235,7 @@ function Nav({ isNarrow, ctx }: { isNarrow: boolean; ctx: ScrollCtx }) {
           <View style={ns.navRight}>
             <TouchableOpacity style={ns.navLinkTouch} onPress={goExamples} accessibilityRole="link"><Text style={ns.navLink}>Examples</Text></TouchableOpacity>
             <TouchableOpacity style={ns.navLinkTouch} onPress={goApi} accessibilityRole="link"><Text style={ns.navLink}>API</Text></TouchableOpacity>
+            <TouchableOpacity style={ns.navLinkTouch} onPress={goKanban} accessibilityRole="link"><Text style={[ns.navLink, ns.navLinkAccent]}>Kanban</Text></TouchableOpacity>
             <TouchableOpacity
               style={ns.navBtnBorder}
               onPress={() => Linking.openURL('https://github.com/botjaeger/expo-dnd')}
@@ -1278,6 +1294,7 @@ export default function App() {
   const { width } = useWindowDimensions();
   const isNarrow = width < 768;
   const isMedium = width >= 768 && width < 1024;
+  const [page, setPage] = useState<'docs' | 'kanban' | 'settings' | 'calendar'>('docs');
 
   const scrollRef = useRef<ScrollView>(null);
   const positionsRef = useRef<Record<string, number>>({});
@@ -1326,11 +1343,38 @@ export default function App() {
   }, []);
 
 
+  if (page === 'kanban') {
+    return (
+      <GestureHandlerRootView style={gs.root}>
+        <StatusBar style="light" />
+        <KanbanDemo onBack={() => setPage('docs')} />
+      </GestureHandlerRootView>
+    );
+  }
+
+  if (page === 'settings') {
+    return (
+      <GestureHandlerRootView style={gs.root}>
+        <StatusBar style="light" />
+        <SettingsDemo onBack={() => setPage('docs')} />
+      </GestureHandlerRootView>
+    );
+  }
+
+  if (page === 'calendar') {
+    return (
+      <GestureHandlerRootView style={gs.root}>
+        <StatusBar style="light" />
+        <CalendarDemo onBack={() => setPage('docs')} />
+      </GestureHandlerRootView>
+    );
+  }
+
   return (
     <GestureHandlerRootView style={gs.root}>
       <StatusBar style="light" />
 
-      <Nav isNarrow={isNarrow} ctx={ctx} />
+      <Nav isNarrow={isNarrow} ctx={ctx} onKanban={() => setPage('kanban')} />
 
       <ScrollView
         ref={scrollRef}
@@ -1343,14 +1387,28 @@ export default function App() {
         <View style={[hs.hero, isMedium && hs.heroMedium]}>
           <Text style={hs.heroLabel}>expo-dnd</Text>
           <Text style={[hs.heroTitle, isMedium && hs.heroTitleMedium, isNarrow && hs.heroTitleNarrow]}>
-            {'Cross-platform drag\u00A0& drop for React Native.'}
+            {'Drag\u00A0& drop powered by UI\u2011thread animations.'}
           </Text>
           <Text style={hs.heroPlatforms}>{'iOS \u00B7 Android \u00B7 Web'}</Text>
-          <Text style={hs.heroDesc}>
-            Built on Reanimated{'\u00A0'}3 and Gesture Handler{'\u00A0'}2. Sortable lists,
-            cross-list transfers, collision detection, and smooth animations{'\u00A0'}
-            {'\u2014'} all running at 60{'\u00A0'}fps on the UI thread.
-          </Text>
+
+          <View style={hs.whyList}>
+            <Text style={hs.whyItem}>
+              <Text style={hs.whyBullet}>{'\u25B8 '}</Text>
+              Gestures and animations on the <Text style={hs.whyBold}>UI thread</Text> via Reanimated worklets {'\u2014'} no JS bridge during drag
+            </Text>
+            <Text style={hs.whyItem}>
+              <Text style={hs.whyBullet}>{'\u25B8 '}</Text>
+              <Text style={hs.whyBold}>Auto-measuring</Text> sortable lists {'\u2014'} variable heights work without configuration
+            </Text>
+            <Text style={hs.whyItem}>
+              <Text style={hs.whyBullet}>{'\u25B8 '}</Text>
+              <Text style={hs.whyBold}>Cross-list transfers</Text>, collision detection, auto-scroll, drag handles, and custom hooks
+            </Text>
+            <Text style={hs.whyItem}>
+              <Text style={hs.whyBullet}>{'\u25B8 '}</Text>
+              Works with <Text style={hs.whyBold}>Expo</Text> and bare React Native {'\u2014'} Fabric and New Architecture supported
+            </Text>
+          </View>
 
           <View style={hs.installBlock}>
             <Text style={hs.installText}>
@@ -1421,8 +1479,8 @@ export default function App() {
 
         <DemoBlock
           num="01"
-          title="Basic Drag & Drop"
-          desc="Long-press to pick up, drag onto a drop zone. onDragEnd fires with the source and target IDs. Item animates back if released outside all zones."
+          title="Drag & Drop"
+          desc="Long-press to pick up, drag onto a zone. Collision detection uses center-point check with intersection ratio fallback. Items spring back if released outside all zones."
           panel={<Demo1Panel />}
           tabs={{ Setup: BASIC_SETUP, Callbacks: BASIC_CALLBACKS, Full: BASIC_FULL }}
           isNarrow={isNarrow}
@@ -1430,8 +1488,8 @@ export default function App() {
 
         <DemoBlock
           num="02"
-          title="Sortable List"
-          desc="Long-press to pick up, drag to reorder. Items animate smoothly into position. No itemSize needed — sizes are auto-measured after render."
+          title="Reorder List"
+          desc="Long-press to reorder. Positions animate on the UI thread via shared values. No itemSize needed — heights are auto-measured after render."
           panel={<Demo2Panel />}
           tabs={{ Setup: SORT_SETUP, Callbacks: SORT_CALLBACKS, Full: SORT_FULL }}
           isNarrow={isNarrow}
@@ -1439,8 +1497,8 @@ export default function App() {
 
         <DemoBlock
           num="03"
-          title="Cross-List Transfer"
-          desc="Drag items between independent lists. DraggableListGroup coordinates the transfer and fires onDrop with source and target info."
+          title="Move Between Lists"
+          desc="Drag items between independent lists. DraggableListGroup coordinates source/target tracking, insertion indices, and auto-scroll across lists."
           panel={<Demo3Panel isNarrow={isNarrow} />}
           tabs={{ Setup: XLIST_SETUP, Callbacks: XLIST_CALLBACKS, Full: XLIST_FULL }}
           isNarrow={isNarrow}
@@ -1448,8 +1506,8 @@ export default function App() {
 
         <DemoBlock
           num="04"
-          title="Variable Heights"
-          desc="Items with different heights — no itemSize needed. SortableList auto-measures each item after render and handles mixed sizes seamlessly."
+          title="Mixed Heights"
+          desc="Each item is measured via onLayout after first render. Prefix sums track positions for O(log n) index lookup during drag. No manual sizing."
           panel={<Demo4Panel />}
           tabs={{ Setup: VARH_SETUP, Callbacks: VARH_CALLBACKS, Full: VARH_FULL }}
           isNarrow={isNarrow}
@@ -1457,12 +1515,80 @@ export default function App() {
 
         <DemoBlock
           num="05"
-          title="Custom Hooks"
-          desc="Build your own drag-and-drop from scratch using useDraggable, useDroppable, and useDndContext. Full control over rendering, gestures, and state."
+          title="Build Your Own"
+          desc="useDraggable, useDroppable, and useDndContext give you the gesture, collision, and overlay primitives. You control the rendering."
           panel={<Demo5Panel />}
           tabs={{ Setup: HOOKS_SETUP, Callbacks: HOOKS_CALLBACKS, Full: HOOKS_FULL }}
           isNarrow={isNarrow}
         />
+
+        {/* ── Complex Examples ─────────────────────── */}
+        <Text style={gs.sectionMarker}>{'// complex examples'}</Text>
+
+        <View style={[gs.complexSection, !isNarrow && gs.complexSectionRow]}>
+          <TouchableOpacity
+            style={gs.complexCard}
+            onPress={() => setPage('kanban')}
+            activeOpacity={0.8}
+          >
+            <View style={gs.complexCardInner}>
+              <View style={gs.complexCardHeader}>
+                <Text style={gs.complexCardIcon}>{'\u2630'}</Text>
+                <View style={gs.complexCardBadge}>
+                  <Text style={gs.complexCardBadgeText}>Cross-list</Text>
+                </View>
+              </View>
+              <Text style={gs.complexCardTitle}>Kanban Board</Text>
+              <Text style={gs.complexCardDesc}>
+                Multi-column task board with drag between columns, tap-to-edit cards,
+                and auto-measuring heights. Built with DraggableListGroup.
+              </Text>
+              <Text style={gs.complexCardLink}>Open demo {'\u2192'}</Text>
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={gs.complexCard}
+            onPress={() => setPage('settings')}
+            activeOpacity={0.8}
+          >
+            <View style={gs.complexCardInner}>
+              <View style={gs.complexCardHeader}>
+                <Text style={gs.complexCardIcon}>{'\uD83D\uDCCA'}</Text>
+                <View style={gs.complexCardBadge}>
+                  <Text style={gs.complexCardBadgeText}>Sortable</Text>
+                </View>
+              </View>
+              <Text style={gs.complexCardTitle}>Dashboard Widgets</Text>
+              <Text style={gs.complexCardDesc}>
+                Monitoring dashboard with draggable widget cards. Reorder priority,
+                hide/show widgets, sparkline charts. Built with SortableList.
+              </Text>
+              <Text style={gs.complexCardLink}>Open demo {'\u2192'}</Text>
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={gs.complexCard}
+            onPress={() => setPage('calendar')}
+            activeOpacity={0.8}
+          >
+            <View style={gs.complexCardInner}>
+              <View style={gs.complexCardHeader}>
+                <Text style={gs.complexCardIcon}>{'\uD83D\uDCC5'}</Text>
+                <View style={gs.complexCardBadge}>
+                  <Text style={gs.complexCardBadgeText}>Full app</Text>
+                </View>
+              </View>
+              <Text style={gs.complexCardTitle}>Calendar</Text>
+              <Text style={gs.complexCardDesc}>
+                Day, week, and month views. Drag events between days,
+                reorder within a day, add/edit events with type and color.
+              </Text>
+              <Text style={gs.complexCardLink}>Open demo {'\u2192'}</Text>
+            </View>
+          </TouchableOpacity>
+        </View>
 
         {/* ── API Reference ────────────────────────── */}
         <View onLayout={trackLayout('api')}>
@@ -1762,12 +1888,21 @@ const ns = StyleSheet.create({
     alignSelf: 'center',
     width: '100%',
   },
+  logoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
   logo: {
     fontFamily: 'monospace',
     fontSize: 14,
     fontWeight: '700',
     color: C.text,
     letterSpacing: 0.5,
+  },
+  starBadge: {
+    width: 70,
+    height: 20,
   },
   navRight: {
     flexDirection: 'row',
@@ -1780,6 +1915,10 @@ const ns = StyleSheet.create({
     color: C.muted,
     paddingHorizontal: 10,
     paddingVertical: 6,
+  },
+  navLinkAccent: {
+    color: C.accent,
+    fontWeight: '600',
   },
   navLinkTouch: {
     minHeight: 44,
@@ -1870,6 +2009,69 @@ const gs = StyleSheet.create({
     marginTop: 64,
     marginBottom: 48,
   },
+  // Complex examples section
+  complexSection: {
+    marginBottom: 48,
+    gap: 16,
+  },
+  complexSectionRow: {
+    flexDirection: 'row',
+  },
+  complexCard: {
+    flex: 1,
+    backgroundColor: C.surface,
+    borderWidth: 1,
+    borderColor: C.border,
+    borderRadius: 10,
+    maxWidth: 400,
+  },
+  complexCardInner: {
+    padding: 24,
+  },
+  complexCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 14,
+  },
+  complexCardIcon: {
+    fontSize: 20,
+    color: C.accent,
+  },
+  complexCardBadge: {
+    backgroundColor: C.accent + '18',
+    borderRadius: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  complexCardBadgeText: {
+    fontFamily: 'monospace',
+    fontSize: 10,
+    fontWeight: '600',
+    color: C.accent,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  complexCardTitle: {
+    fontFamily: 'monospace',
+    fontSize: 18,
+    fontWeight: '700',
+    color: C.text,
+    marginBottom: 8,
+  },
+  complexCardDesc: {
+    fontFamily: 'monospace',
+    fontSize: 12,
+    color: C.muted,
+    lineHeight: 20,
+    marginBottom: 16,
+  },
+  complexCardLink: {
+    fontFamily: 'monospace',
+    fontSize: 13,
+    fontWeight: '600',
+    color: C.accent,
+  },
   footer: {
     marginTop: 64,
     paddingTop: 32,
@@ -1924,6 +2126,24 @@ const hs = StyleSheet.create({
     lineHeight: 26,
     marginBottom: 36,
     maxWidth: 520,
+  },
+  whyList: {
+    marginBottom: 36,
+    maxWidth: 580,
+    gap: 10,
+  },
+  whyItem: {
+    fontFamily: 'monospace',
+    fontSize: 13,
+    color: C.muted,
+    lineHeight: 20,
+  },
+  whyBullet: {
+    color: C.accent,
+  },
+  whyBold: {
+    color: C.text,
+    fontWeight: '600',
   },
   installBlock: {
     backgroundColor: C.surface,

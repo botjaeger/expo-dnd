@@ -86,6 +86,10 @@ export interface DraggableListProps<T> {
   /** Animation effect applied to the drag overlay for items in this list.
    *  Overrides the DndProvider-level dragEffect set on DraggableListGroup. */
   dragEffect?: import('../animations/dragEffects').DragEffect | import('../animations/dragEffects').DragEffectConfig;
+  /** Long press duration in ms before drag activates (default: 200) */
+  longPressDuration?: number;
+  /** Called when an item is tapped (not dragged). Suppressed after a drag completes. */
+  onItemPress?: (item: T, index: number) => void;
 }
 
 export interface DraggableListGroupProps<T> {
@@ -510,6 +514,8 @@ interface DraggableListItemProps<T> {
   activeDragStyle?: ViewStyle;
   dragEffect?: import('../animations/dragEffects').DragEffectConfig;
   renderItem: (info: DraggableListItemInfo<T>) => React.ReactNode;
+  longPressDuration?: number;
+  onItemPress?: (item: T, index: number) => void;
 }
 
 function DraggableListItemInner<T>({
@@ -526,6 +532,8 @@ function DraggableListItemInner<T>({
   activeDragStyle,
   dragEffect,
   renderItem,
+  longPressDuration,
+  onItemPress,
 }: DraggableListItemProps<T>) {
   const context = useDraggableListContext<T>();
   const isHorizontal = direction === 'horizontal';
@@ -616,6 +624,10 @@ function DraggableListItemInner<T>({
     ? { width: itemHeight, height: '100%' as const }
     : { height: itemHeight, width: '100%' as const };
 
+  const handlePress = useCallback(() => {
+    onItemPress?.(item, index);
+  }, [onItemPress, item, index]);
+
   return (
     <Animated.View style={[sizeStyle, positionedStyle] as any}>
       <Draggable
@@ -624,6 +636,8 @@ function DraggableListItemInner<T>({
         handle={handle}
         _skipDragStyle
         dragEffect={dragEffect}
+        longPressDuration={longPressDuration}
+        onPress={onItemPress ? handlePress : undefined}
       >
         <View style={sizeStyle}>
           <DraggableListItemRenderer
@@ -674,13 +688,20 @@ function InsertionIndicator({ listId, prefixSum, direction, renderIndicator }: I
 
   if (state === null) return null;
 
-  // For same-list reorder, the source item's ghost still occupies its slot,
-  // so the visual gap is one position after the target index.
-  // Clamp to the last item's top edge so the indicator stays inside the list.
-  const lastItemIdx = Math.max(0, prefixSum.length - 2);
+  // prefixSum has n+1 entries for n items:
+  //   prefixSum[0] = 0 (top of first item)
+  //   prefixSum[i] = top of item i
+  //   prefixSum[n] = total height (bottom of last item)
+  //
+  // Same-list reorder: targetIndex is 0..n-1 (final position). The source
+  // ghost still occupies its slot, so the indicator goes at idx+1.
+  //
+  // Cross-list drop: targetIndex is 0..n (insertion point). The indicator
+  // goes directly at idx — 0 = above first item, n = after last item.
+  const maxIdx = prefixSum.length - 1;
   const posIdx = state.sameList
-    ? Math.min(state.idx + 1, lastItemIdx)
-    : Math.min(state.idx, lastItemIdx);
+    ? Math.min(state.idx + 1, maxIdx)
+    : Math.min(state.idx, maxIdx);
   const position = prefixSum[posIdx] ?? 0;
 
   return (
@@ -716,6 +737,8 @@ export function DraggableList<T>({
   activeDragStyle,
   renderInsertIndicator,
   dragEffect: dragEffectProp,
+  longPressDuration,
+  onItemPress,
 }: DraggableListProps<T>) {
   const resolvedDragEffect: DragEffectConfig | undefined = dragEffectProp
     ? resolveDragEffect(dragEffectProp)
@@ -941,6 +964,8 @@ export function DraggableList<T>({
       activeDragStyle={activeDragStyle}
       dragEffect={resolvedDragEffect}
       renderItem={renderItem}
+      longPressDuration={longPressDuration}
+      onItemPress={onItemPress}
     />
   ));
 

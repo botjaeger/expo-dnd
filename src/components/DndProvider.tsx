@@ -32,6 +32,7 @@ export function DndProvider({
   onDragOver,
   onDragEnd,
   dragEffect,
+  style,
 }: DndProviderProps) {
   const existingPortal = usePortal();
 
@@ -42,6 +43,7 @@ export function DndProvider({
       onDragOver={onDragOver}
       onDragEnd={onDragEnd}
       dragEffect={dragEffect}
+      style={style}
     >
       {children}
     </DndContextProvider>

@@ -1,70 +1,91 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { View, LayoutChangeEvent } from 'react-native';
 import type { ViewStyle, StyleProp } from 'react-native';
-import { SortableList } from './SortableList';
-import { SortableItemRenderer } from './sortable-shared';
+import { DraggableList, type DraggableListProps, type DraggableListItemInfo } from './DraggableList';
 
 // ============ Types ============
 
-export interface AutoSortableProps<T> {
-  /** Unique identifier for this sortable zone */
-  id?: string;
-  /** Array of items to render */
-  data: T[];
-  /** Render function for each item */
-  renderItem: (info: { item: T; index: number; isDragging: boolean }) => React.ReactNode;
-  /** Called when items are reordered */
-  onReorder: (data: T[], event: { fromIndex: number; toIndex: number; item: T }) => void;
-  /** Extract unique key from item */
-  keyExtractor: (item: T) => string;
-  /** Container size - if provided, enables scroll mode with auto-scroll */
-  containerSize?: number;
-  /** Horizontal or vertical orientation (default: 'vertical') */
-  direction?: 'horizontal' | 'vertical';
-  /** Distance from edge to trigger auto-scroll (default: 80). Only used in scroll mode. */
-  autoScrollThreshold?: number;
-  /** Custom style for the container */
-  style?: any;
-  /** Called when drag starts */
-  onDragStart?: (id: string, index: number) => void;
-  /** Called during drag with position updates */
-  onDragMove?: (id: string, overIndex: number, position: number) => void;
-  /** Called when drag ends (before onReorder) */
-  onDragEnd?: (id: string, fromIndex: number, toIndex: number) => void;
-  /** When true, only a DragHandle inside renderItem triggers dragging */
-  handle?: boolean;
-  /** Style applied to the source item placeholder while it is being dragged.
-   *  Defaults to { opacity: 0 } (invisible). Set e.g. { opacity: 0.3 } to show a ghost. */
-  activeDragStyle?: import('react-native').ViewStyle;
-  /** Render a custom insertion indicator at the current drag position.
-   *  Receives the target index. Return null to hide. */
-  renderInsertIndicator?: (index: number) => React.ReactNode;
-  /** Animation effect applied to the drag overlay when picked up */
-  dragEffect?: import('../animations/dragEffects').DragEffect | import('../animations/dragEffects').DragEffectConfig;
-  /** Long press duration in ms before drag activates (default: 200) */
-  longPressDuration?: number;
-  /** Called when an item is tapped (not dragged). Suppressed after a drag completes. */
-  onItemPress?: (item: T, index: number) => void;
+export type AutoDraggableListProps<T> = Omit<DraggableListProps<T>, 'itemSize'> & {
+  /** Size of each item. If omitted, items are auto-measured after render. */
+  itemSize?: number | ((index: number) => number);
+};
+
+// ============ Item Renderer (memoized) ============
+
+interface ItemRendererProps<T> {
+  item: T;
+  index: number;
+  isDragging: boolean;
+  renderer: (info: DraggableListItemInfo<T>) => React.ReactNode;
 }
 
-// ============ AutoSortable ============
+function ItemRendererInner<T>({ item, index, isDragging, renderer }: ItemRendererProps<T>) {
+  return <>{renderer({ item, index, isDragging })}</>;
+}
+
+const ItemRenderer = React.memo(ItemRendererInner) as typeof ItemRendererInner;
+
+// ============ AutoDraggableList ============
 
 /**
- * A wrapper around Sortable that automatically measures item heights.
+ * A wrapper around DraggableList that automatically measures item sizes.
  * No `itemSize` prop needed — items are rendered once for measurement,
- * then the measured sizes are passed to Sortable.
+ * then the measured sizes are passed to DraggableList.
+ *
+ * If `itemSize` is provided, measurement is skipped and the value is
+ * passed through directly (same behavior as DraggableList).
  */
-export function AutoSortable<T>({
+export function AutoDraggableList<T>({
   data,
   renderItem,
-  onReorder,
   keyExtractor,
+  itemSize,
   direction = 'vertical',
   style,
   ...rest
-}: AutoSortableProps<T>) {
+}: AutoDraggableListProps<T>) {
   const isHorizontal = direction === 'horizontal';
 
+  // If itemSize is provided, skip measurement and delegate directly
+  if (itemSize !== undefined) {
+    return (
+      <DraggableList
+        data={data}
+        renderItem={renderItem}
+        keyExtractor={keyExtractor}
+        itemSize={itemSize}
+        direction={direction}
+        style={style}
+        {...rest}
+      />
+    );
+  }
+
+  // Auto-measurement mode
+  return (
+    <AutoMeasuredDraggableList
+      data={data}
+      renderItem={renderItem}
+      keyExtractor={keyExtractor}
+      direction={direction}
+      isHorizontal={isHorizontal}
+      style={style}
+      {...rest}
+    />
+  );
+}
+
+// ============ AutoMeasuredDraggableList ============
+
+function AutoMeasuredDraggableList<T>({
+  data,
+  renderItem,
+  keyExtractor,
+  direction,
+  isHorizontal,
+  style,
+  ...rest
+}: Omit<DraggableListProps<T>, 'itemSize'> & { isHorizontal: boolean }) {
   // Cache measured sizes by item key
   const [measured, setMeasured] = useState<Record<string, number>>({});
   const pendingRef = useRef<Record<string, number>>({});
@@ -80,7 +101,7 @@ export function AutoSortable<T>({
     };
   }, []);
 
-  // Width-based and height-based measurements are not interchangeable.
+  // Reset measurements when direction changes
   useEffect(() => {
     pendingRef.current = {};
     if (batchTimerRef.current) {
@@ -90,33 +111,22 @@ export function AutoSortable<T>({
     setMeasured({});
   }, [isHorizontal]);
 
-  // Remove measurements for items that no longer exist.
+  // Remove measurements for items that no longer exist
   useEffect(() => {
     setMeasured((prev) => {
       const next: Record<string, number> = {};
-      let changed = false;
-
       for (const item of data) {
         const key = keyExtractor(item);
         if (key in prev) {
           next[key] = prev[key];
         }
       }
-
       const prevKeys = Object.keys(prev);
       const nextKeys = Object.keys(next);
-      if (prevKeys.length !== nextKeys.length) {
-        changed = true;
-      } else {
-        for (const key of prevKeys) {
-          if (!(key in next)) {
-            changed = true;
-            break;
-          }
-        }
+      if (prevKeys.length !== nextKeys.length || prevKeys.some((k) => !(k in next))) {
+        return next;
       }
-
-      return changed ? next : prev;
+      return prev;
     });
   }, [data, keyExtractor]);
 
@@ -134,7 +144,6 @@ export function AutoSortable<T>({
         const batch = { ...pendingRef.current };
         pendingRef.current = {};
         setMeasured((prev) => {
-          // Skip update if nothing changed
           let changed = false;
           for (const k in batch) {
             if (prev[k] !== batch[k]) {
@@ -166,7 +175,7 @@ export function AutoSortable<T>({
           const key = keyExtractor(item);
           return (
             <View key={key} onLayout={(e) => handleItemLayout(key, e)}>
-              <SortableItemRenderer
+              <ItemRenderer
                 item={item}
                 index={index}
                 isDragging={false}
@@ -179,16 +188,15 @@ export function AutoSortable<T>({
     );
   }
 
-  // All measured: delegate to SortableList with computed sizes
+  // All measured: delegate to DraggableList with computed sizes
   const itemSizeFn = (index: number): number => {
     return measured[keyExtractor(data[index])] ?? 0;
   };
 
   return (
-    <SortableList
+    <DraggableList
       data={data}
       renderItem={renderItem}
-      onReorder={onReorder}
       keyExtractor={keyExtractor}
       itemSize={itemSizeFn}
       direction={direction}
