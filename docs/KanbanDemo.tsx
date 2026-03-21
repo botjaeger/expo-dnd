@@ -331,7 +331,7 @@ export function KanbanDemo({ onBack }: { onBack: () => void }) {
   const [editingCard, setEditingCard] = useState<{ card: KanbanCard; columnId: ColumnId } | null>(null);
 
   const handleTapCard = useCallback((card: KanbanCard) => {
-    // Find which column this card is in
+    setShowAddForm(false);
     if (todo.find(c => c.id === card.id)) setEditingCard({ card, columnId: 'todo' });
     else if (progress.find(c => c.id === card.id)) setEditingCard({ card, columnId: 'progress' });
     else if (done.find(c => c.id === card.id)) setEditingCard({ card, columnId: 'done' });
@@ -385,7 +385,7 @@ export function KanbanDemo({ onBack }: { onBack: () => void }) {
           <Text style={s.title}>Kanban Board</Text>
         </View>
         <View style={s.headerRight}>
-          <TouchableOpacity onPress={() => setShowAddForm(v => !v)} activeOpacity={0.7}>
+          <TouchableOpacity onPress={() => { setShowAddForm(v => !v); setEditingCard(null); }} activeOpacity={0.7}>
             <Text style={s.addBtn}>+ Add</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={handleReset} activeOpacity={0.7}>
