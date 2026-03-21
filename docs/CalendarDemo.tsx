@@ -34,7 +34,7 @@ interface CalEvent {
   title: string;
 }
 
-type ViewMode = 'month' | 'week';
+type ViewMode = 'month' | 'week' | 'day';
 
 // ── Date helpers ──────────────────────────────────────────────────────────────
 function toYMD(d: Date): string {
@@ -106,22 +106,16 @@ const SEED_EVENTS: CalEvent[] = [
 function EventBar({
   event,
   isDragging,
-  onPress,
 }: {
   event: CalEvent;
   isDragging: boolean;
-  onPress?: () => void;
 }) {
   return (
-    <TouchableOpacity
-      onPress={onPress}
-      activeOpacity={onPress ? 0.75 : 1}
-      style={[s.eventBar, { backgroundColor: event.color }, isDragging && s.eventBarDragging]}
-    >
+    <View style={[s.eventBar, { backgroundColor: event.color }, isDragging && s.eventBarDragging]}>
       <Text style={s.eventBarText} numberOfLines={1}>
         {event.time} {event.title}
       </Text>
-    </TouchableOpacity>
+    </View>
   );
 }
 
@@ -242,13 +236,11 @@ function MonthView({
   events,
   monthDate,
   onDrop,
-  onEditEvent,
   onAddForDate,
 }: {
   events: CalEvent[];
   monthDate: Date;
   onDrop: (event: DropEvent<CalEvent>) => void;
-  onEditEvent: (ev: CalEvent) => void;
   onAddForDate: (date: string) => void;
 }) {
   const year = monthDate.getFullYear();
@@ -309,9 +301,9 @@ function MonthView({
 
   const renderItem = useCallback(
     ({ item, isDragging }: { item: CalEvent; isDragging: boolean }) => (
-      <EventBar event={item} isDragging={isDragging} onPress={() => onEditEvent(item)} />
+      <EventBar event={item} isDragging={isDragging} />
     ),
-    [onEditEvent]
+    []
   );
 
   return (
@@ -389,13 +381,11 @@ function WeekView({
   events,
   weekDate,
   onDrop,
-  onEditEvent,
   onAddForDate,
 }: {
   events: CalEvent[];
   weekDate: Date;
   onDrop: (event: DropEvent<CalEvent>) => void;
-  onEditEvent: (ev: CalEvent) => void;
   onAddForDate: (date: string) => void;
 }) {
   const days = weekDays(weekDate);
@@ -403,69 +393,122 @@ function WeekView({
 
   const renderItem = useCallback(
     ({ item, isDragging }: { item: CalEvent; isDragging: boolean }) => (
-      <EventBar event={item} isDragging={isDragging} onPress={() => onEditEvent(item)} />
+      <EventBar event={item} isDragging={isDragging} />
     ),
-    [onEditEvent]
+    []
   );
 
   return (
     <DraggableListGroup<CalEvent> onDrop={onDrop} dragEffect="pickup">
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        <View>
-          {/* Day headers row */}
-          <View style={s.weekHeaderRow}>
-            {days.map((day, i) => {
-              const ymd = toYMD(day);
-              const isToday = ymd === today;
-              return (
-                <View key={ymd} style={s.weekHeaderCell}>
-                  <Text style={[s.weekHeaderDay, isToday && s.weekHeaderDayToday]}>
-                    {DAY_HEADERS[i]}
+      <View style={s.weekContainer}>
+        {/* Day headers row */}
+        <View style={s.weekHeaderRow}>
+          {days.map((day, i) => {
+            const ymd = toYMD(day);
+            const isToday = ymd === today;
+            return (
+              <View key={ymd} style={s.weekHeaderCell}>
+                <Text style={[s.weekHeaderDay, isToday && s.weekHeaderDayToday]}>
+                  {DAY_HEADERS[i]}
+                </Text>
+                <View style={[s.weekDayNumWrap, isToday && s.weekDayNumWrapToday]}>
+                  <Text style={[s.weekDayNum, isToday && s.weekDayNumToday]}>
+                    {day.getDate()}
                   </Text>
-                  <View style={[s.weekDayNumWrap, isToday && s.weekDayNumWrapToday]}>
-                    <Text style={[s.weekDayNum, isToday && s.weekDayNumToday]}>
-                      {day.getDate()}
-                    </Text>
-                  </View>
                 </View>
-              );
-            })}
-          </View>
-
-          {/* Event columns */}
-          <View style={s.weekColsRow}>
-            {days.map((day, _i) => {
-              const ymd = toYMD(day);
-              const dayEvs = events
-                .filter((e) => e.date === ymd)
-                .sort((a, b) => a.time.localeCompare(b.time));
-              return (
-                <View key={ymd} style={s.weekCol}>
-                  <AutoDraggableList<CalEvent>
-                    id={ymd}
-                    data={dayEvs}
-                    keyExtractor={(item) => item.id}
-                    itemSize={28}
-                    direction="vertical"
-                    activeDragStyle={{ opacity: 0.3 }}
-                    activeContainerStyle={activeContainerStyle}
-                    renderInsertIndicator={renderInsertIndicator}
-                    renderItem={renderItem}
-                  />
-                  <TouchableOpacity
-                    style={s.weekAddBtn}
-                    onPress={() => onAddForDate(ymd)}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={s.weekAddBtnText}>+ Add</Text>
-                  </TouchableOpacity>
-                </View>
-              );
-            })}
-          </View>
+              </View>
+            );
+          })}
         </View>
-      </ScrollView>
+
+        {/* Event columns */}
+        <View style={[s.weekColsRow, { flex: 1 }]}>
+          {days.map((day, _i) => {
+            const ymd = toYMD(day);
+            const dayEvs = events
+              .filter((e) => e.date === ymd)
+              .sort((a, b) => a.time.localeCompare(b.time));
+            return (
+              <View key={ymd} style={s.weekCol}>
+                <AutoDraggableList<CalEvent>
+                  id={ymd}
+                  data={dayEvs}
+                  keyExtractor={(item) => item.id}
+                  itemSize={28}
+                  direction="vertical"
+                  activeDragStyle={{ opacity: 0.3 }}
+                  activeContainerStyle={activeContainerStyle}
+                  renderInsertIndicator={renderInsertIndicator}
+                  renderItem={renderItem}
+                />
+                <TouchableOpacity
+                  style={s.weekAddBtn}
+                  onPress={() => onAddForDate(ymd)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={s.weekAddBtnText}>+ Add</Text>
+                </TouchableOpacity>
+              </View>
+            );
+          })}
+        </View>
+      </View>
     </DraggableListGroup>
+  );
+}
+
+// ── DayView ────────────────────────────────────────────────────────────────────
+function DayView({
+  events,
+  dayDate,
+  onAddForDate,
+}: {
+  events: CalEvent[];
+  dayDate: Date;
+  onAddForDate: (date: string) => void;
+}) {
+  const ymd = toYMD(dayDate);
+  const dayEvents = events.filter((e) => e.date === ymd).sort((a, b) => a.time.localeCompare(b.time));
+
+  // Time slots from 8am to 8pm
+  const timeSlots = Array.from({ length: 13 }, (_, i) => {
+    const hour = i + 8;
+    const ampm = hour >= 12 ? 'pm' : 'am';
+    const h = hour > 12 ? hour - 12 : hour;
+    return `${h}:00${ampm}`;
+  });
+
+  return (
+    <View style={s.dayView}>
+      {timeSlots.map((slot) => {
+        const slotEvents = dayEvents.filter((e) => {
+          const eventHour = parseInt(e.time);
+          const isPM = e.time.toLowerCase().includes('pm');
+          const hour24 = isPM && eventHour !== 12 ? eventHour + 12 : eventHour;
+          const slotHour = parseInt(slot);
+          const slotIsPM = slot.includes('pm');
+          const slotHour24 = slotIsPM && slotHour !== 12 ? slotHour + 12 : slotHour;
+          return hour24 === slotHour24;
+        });
+
+        return (
+          <View key={slot} style={s.timeSlotRow}>
+            <Text style={s.timeSlotLabel}>{slot}</Text>
+            <View style={s.timeSlotContent}>
+              {slotEvents.map((ev) => (
+                <View key={ev.id} style={[s.dayEvent, { backgroundColor: ev.color }]}>
+                  <Text style={s.dayEventText}>{ev.title}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        );
+      })}
+
+      <TouchableOpacity style={s.dayAddBtn} onPress={() => onAddForDate(ymd)} activeOpacity={0.7}>
+        <Text style={s.dayAddBtnText}>+ Add event</Text>
+      </TouchableOpacity>
+    </View>
   );
 }
 
@@ -489,6 +532,7 @@ export function CalendarDemo({ onBack }: { onBack: () => void }) {
     setNavDate((d) => {
       const next = new Date(d);
       if (view === 'week') next.setDate(next.getDate() - 7);
+      else if (view === 'day') next.setDate(next.getDate() - 1);
       else next.setMonth(next.getMonth() - 1);
       return next;
     });
@@ -498,6 +542,7 @@ export function CalendarDemo({ onBack }: { onBack: () => void }) {
     setNavDate((d) => {
       const next = new Date(d);
       if (view === 'week') next.setDate(next.getDate() + 7);
+      else if (view === 'day') next.setDate(next.getDate() + 1);
       else next.setMonth(next.getMonth() + 1);
       return next;
     });
@@ -577,6 +622,8 @@ export function CalendarDemo({ onBack }: { onBack: () => void }) {
     } else {
       navTitle = `${MONTH_NAMES[start.getMonth()].slice(0, 3)} ${start.getDate()} – ${MONTH_NAMES[end.getMonth()].slice(0, 3)} ${end.getDate()}, ${end.getFullYear()}`;
     }
+  } else if (view === 'day') {
+    navTitle = `${MONTH_NAMES[navDate.getMonth()]} ${navDate.getDate()}, ${navDate.getFullYear()}`;
   } else {
     navTitle = formatMonthYear(navDate);
   }
@@ -610,7 +657,7 @@ export function CalendarDemo({ onBack }: { onBack: () => void }) {
         {/* Right: month/week toggle + add */}
         <View style={s.topRight}>
           <View style={s.viewTabs}>
-            {(['month', 'week'] as ViewMode[]).map((v) => (
+            {(['month', 'week', 'day'] as ViewMode[]).map((v) => (
               <TouchableOpacity
                 key={v}
                 style={[s.viewTab, view === v && s.viewTabActive]}
@@ -618,7 +665,7 @@ export function CalendarDemo({ onBack }: { onBack: () => void }) {
                 activeOpacity={0.7}
               >
                 <Text style={[s.viewTabText, view === v && s.viewTabTextActive]}>
-                  {v === 'month' ? 'Month' : 'Week'}
+                  {v === 'month' ? 'Month' : v === 'week' ? 'Week' : 'Day'}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -649,7 +696,6 @@ export function CalendarDemo({ onBack }: { onBack: () => void }) {
             events={events}
             monthDate={navDate}
             onDrop={handleDrop}
-            onEditEvent={handleEditEvent}
             onAddForDate={openAdd}
           />
         )}
@@ -658,7 +704,13 @@ export function CalendarDemo({ onBack }: { onBack: () => void }) {
             events={events}
             weekDate={navDate}
             onDrop={handleDrop}
-            onEditEvent={handleEditEvent}
+            onAddForDate={openAdd}
+          />
+        )}
+        {view === 'day' && (
+          <DayView
+            events={events}
+            dayDate={navDate}
             onAddForDate={openAdd}
           />
         )}
@@ -825,6 +877,7 @@ const s = StyleSheet.create({
     flex: 1,
   },
   contentContainer: {
+    flexGrow: 1,
     paddingBottom: 48,
   },
 
@@ -871,6 +924,7 @@ const s = StyleSheet.create({
     borderTopWidth: 1,
     borderLeftWidth: 1,
     borderColor: C.border,
+    flex: 1,
   },
   monthHeaderRow: {
     flexDirection: 'row',
@@ -952,6 +1006,9 @@ const s = StyleSheet.create({
   },
 
   // Week view
+  weekContainer: {
+    flex: 1,
+  },
   weekHeaderRow: {
     flexDirection: 'row',
     borderBottomWidth: 1,
@@ -959,7 +1016,7 @@ const s = StyleSheet.create({
     backgroundColor: C.surface,
   },
   weekHeaderCell: {
-    width: 130,
+    flex: 1,
     paddingVertical: 10,
     paddingHorizontal: 8,
     alignItems: 'center',
@@ -1002,7 +1059,7 @@ const s = StyleSheet.create({
     gap: 1,
   },
   weekCol: {
-    width: 130,
+    flex: 1,
     backgroundColor: C.surface,
     padding: 6,
     minHeight: 200,
@@ -1128,5 +1185,60 @@ const s = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     color: '#fff',
+  },
+
+  // Day view
+  dayView: {
+    flex: 1,
+    paddingVertical: 8,
+  },
+  timeSlotRow: {
+    flexDirection: 'row',
+    minHeight: 56,
+    borderBottomWidth: 1,
+    borderBottomColor: C.border,
+  },
+  timeSlotLabel: {
+    width: 70,
+    fontFamily: 'monospace',
+    fontSize: 11,
+    color: C.dim,
+    paddingTop: 4,
+    paddingLeft: 12,
+    textAlign: 'right',
+    paddingRight: 12,
+  },
+  timeSlotContent: {
+    flex: 1,
+    borderLeftWidth: 1,
+    borderLeftColor: C.border,
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+    gap: 2,
+  },
+  dayEvent: {
+    borderRadius: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+  },
+  dayEventText: {
+    fontFamily: 'monospace',
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#fff',
+  },
+  dayAddBtn: {
+    alignSelf: 'center',
+    marginTop: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: C.border,
+  },
+  dayAddBtnText: {
+    fontFamily: 'monospace',
+    fontSize: 12,
+    color: C.accent,
   },
 });
