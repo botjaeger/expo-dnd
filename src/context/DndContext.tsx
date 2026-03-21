@@ -326,10 +326,6 @@ export function DndContextProvider({
     );
 
     const newOverId = collision?.id ?? null;
-    // DEBUG: log collision results
-    if (droppableRects.length > 0) {
-      console.log('[collision]', { activeItemId, newOverId, droppableCount: droppableRects.length, rects: droppableRects.map(r => ({ id: r.id, rect: r.rect })) });
-    }
     if (newOverId !== prevExternalOverIdRef.current) {
       overId.value = newOverId;
       prevExternalOverIdRef.current = newOverId;

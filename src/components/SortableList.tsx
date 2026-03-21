@@ -244,14 +244,18 @@ function SortableItemInner<T>({
         dragContentPosition.value = clamp(rawContentPos, 0, totalSize - itemHeight);
       }
 
-      // Swap detection using unclamped center
-      const itemCenter = rawContentPos + itemHeight / 2;
-      const newIndex = getIndexAtMidpoint(currentPrefixSum.value, itemCenter, itemCount, gap);
-      const currentIndex = positions.value[itemId];
+      // Skip swap detection when item has left the container bounds (cross-list drag).
+      // Prevents source list positions from being corrupted while the item hovers
+      // over a different container.
+      if (rawContentPos >= 0 && rawContentPos <= totalSize) {
+        const itemCenter = rawContentPos + itemHeight / 2;
+        const newIndex = getIndexAtMidpoint(currentPrefixSum.value, itemCenter, itemCount, gap);
+        const currentIndex = positions.value[itemId];
 
-      if (newIndex !== currentIndex) {
-        positions.value = objectMove(positions.value, currentIndex, newIndex);
-        runOnJS(onDragMove)(itemId, newIndex, clamp(rawContentPos, 0, totalSize - itemHeight));
+        if (newIndex !== currentIndex) {
+          positions.value = objectMove(positions.value, currentIndex, newIndex);
+          runOnJS(onDragMove)(itemId, newIndex, clamp(rawContentPos, 0, totalSize - itemHeight));
+        }
       }
 
       // Update touch position for auto-scroll
@@ -350,7 +354,7 @@ function SortableItemInner<T>({
       // Don't clamp when active — allow item to leave container bounds for cross-list drag
       mainAxisPos = raw;
       // Allow cross-axis movement for cross-list dragging
-      crossAxisPos = isHorizontal ? crossAxisTranslation.value : crossAxisTranslation.value;
+      crossAxisPos = crossAxisTranslation.value;
     } else {
       mainAxisPos = animatedPosition.value;
       // Shift down when an external item hovers above this item's position
@@ -469,7 +473,7 @@ function SortableInsertionIndicator({
         const idx = positions.value[id];
         if (idx === undefined) return null;
         const ps = currentPrefixSum.value;
-        const lastItemIdx = Math.max(0, ps.length - 2);
+        const lastItemIdx = Math.max(0, ps.length - 1);
         const posIdx = Math.min(idx + 1, lastItemIdx);
         return { idx, position: ps[posIdx] ?? 0 };
       }
@@ -732,10 +736,13 @@ export function SortableList<T>({
   );
 
   useAnimatedReaction(
-    () => hasExternalDrop && dndCtx ? dndCtx.isDragging.value : false,
+    () => (dndCtx ? dndCtx.isDragging.value : false),
     (dragging, prevDragging) => {
-      if (!hasExternalDrop) return;
       if (prevDragging && !dragging) {
+        // Always reset the external insert index when a cross-list drag ends
+        externalInsertIndex.value = -1;
+
+        if (!hasExternalDrop) return;
         const wasOverUs = lastOverId.value === containerDroppableId;
         const wasOurItem = lastActiveId.value ? (positions.value[lastActiveId.value] !== undefined) : false;
 
