@@ -222,41 +222,99 @@ const SORT_ITEMS: SortItem[] = [
   { id: '5', label: 'Ship to npm' },
 ];
 
+const LIST_A: SortItem[] = [
+  { id: 'a1', label: 'Alpha' },
+  { id: 'a2', label: 'Beta' },
+  { id: 'a3', label: 'Gamma' },
+];
+const LIST_B: SortItem[] = [
+  { id: 'b1', label: 'Delta' },
+  { id: 'b2', label: 'Epsilon' },
+];
+
 function Demo2() {
-  const [items, setItems] = useState(SORT_ITEMS);
+  const [listA, setListA] = useState(LIST_A);
+  const [listB, setListB] = useState(LIST_B);
   const [log, setLog] = useState('');
   const [effect, setEffect] = useState<DragEffectOption>('pickup');
 
   return (
     <View style={s.demoWrap}>
       <DemoHeader
-        title="Sortable List"
-        desc="Long-press to reorder. Items animate into place with spring physics."
+        title="Cross-Sortable Transfer"
+        desc="Two SortableLists under one DndProvider. Drag between them — unified architecture."
       />
-      <SortableList
-        data={items}
-        keyExtractor={(item) => item.id}
-        direction="vertical"
-        dragEffect={effect === 'none' ? undefined : effect}
-        activeDragStyle={{ opacity: 0.3 }}
-        renderInsertIndicator={renderInsertIndicator}
-        renderItem={({ item, isDragging }) => (
-          <View style={[s.sortRow, isDragging && { opacity: 0.4 }]}>
-            <Text style={s.grip}>{'\u2807'}</Text>
-            <Text style={s.sortLabel}>{item.label}</Text>
+      <DndProvider>
+        <View style={s.zonesRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={s.zoneLabel}>List A</Text>
+            <SortableList
+              id="listA"
+              data={listA}
+              keyExtractor={(item) => item.id}
+              direction="vertical"
+              dragEffect={effect === 'none' ? undefined : effect}
+              renderInsertIndicator={renderInsertIndicator}
+              renderItem={({ item }) => (
+                <View style={s.sortRow}>
+                  <Text style={s.grip}>{'\u2807'}</Text>
+                  <Text style={s.sortLabel}>{item.label}</Text>
+                </View>
+              )}
+              onReorder={(data) => {
+                setListA(data);
+                setLog(prev => 'Reordered List A' + (prev ? '\n' + prev : ''));
+              }}
+              onExternalDrop={({ activeId, insertIndex }) => {
+                const item = listB.find(i => i.id === activeId);
+                if (!item) return;
+                setListB(prev => prev.filter(i => i.id !== activeId));
+                setListA(prev => {
+                  const next = [...prev];
+                  next.splice(insertIndex, 0, item);
+                  return next;
+                });
+                setLog(prev => `Moved "${item.label}" → List A at ${insertIndex}` + (prev ? '\n' + prev : ''));
+              }}
+            />
           </View>
-        )}
-        onReorder={(data, event) => {
-          setItems(data);
-          setLog(prev =>
-            `Moved "${data[event.toIndex].label}" ${event.fromIndex} → ${event.toIndex}` +
-            (prev ? '\n' + prev : '')
-          );
-        }}
-      />
+          <View style={{ flex: 1 }}>
+            <Text style={s.zoneLabel}>List B</Text>
+            <SortableList
+              id="listB"
+              data={listB}
+              keyExtractor={(item) => item.id}
+              direction="vertical"
+              dragEffect={effect === 'none' ? undefined : effect}
+              renderInsertIndicator={renderInsertIndicator}
+              renderItem={({ item }) => (
+                <View style={s.sortRow}>
+                  <Text style={s.grip}>{'\u2807'}</Text>
+                  <Text style={s.sortLabel}>{item.label}</Text>
+                </View>
+              )}
+              onReorder={(data) => {
+                setListB(data);
+                setLog(prev => 'Reordered List B' + (prev ? '\n' + prev : ''));
+              }}
+              onExternalDrop={({ activeId, insertIndex }) => {
+                const item = listA.find(i => i.id === activeId);
+                if (!item) return;
+                setListA(prev => prev.filter(i => i.id !== activeId));
+                setListB(prev => {
+                  const next = [...prev];
+                  next.splice(insertIndex, 0, item);
+                  return next;
+                });
+                setLog(prev => `Moved "${item.label}" → List B at ${insertIndex}` + (prev ? '\n' + prev : ''));
+              }}
+            />
+          </View>
+        </View>
+      </DndProvider>
       <OptionPicker label="dragEffect" options={DRAG_EFFECTS} value={effect} onChange={setEffect} />
-      <EventLog log={log} placeholder="// long-press to reorder — onReorder fires" />
-      <ResetButton onPress={() => { setItems(SORT_ITEMS); setLog(''); }} />
+      <EventLog log={log} placeholder="// drag between lists — onExternalDrop fires" />
+      <ResetButton onPress={() => { setListA(LIST_A); setListB(LIST_B); setLog(''); }} />
     </View>
   );
 }
