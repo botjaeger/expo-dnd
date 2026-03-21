@@ -306,6 +306,7 @@ function MonthView({
   );
 
   return (
+    <View style={s.monthViewWrap}>
     <DraggableListGroup<CalEvent> onDrop={onDrop} dragEffect="pickup">
       <View style={s.monthView}>
         {/* Day-of-week headers */}
@@ -372,6 +373,7 @@ function MonthView({
         ))}
       </View>
     </DraggableListGroup>
+    </View>
   );
 }
 
@@ -398,6 +400,7 @@ function WeekView({
   );
 
   return (
+    <View style={s.weekViewWrap}>
     <DraggableListGroup<CalEvent> onDrop={onDrop} dragEffect="pickup">
       <View style={s.weekContainer}>
         {/* Day headers row */}
@@ -453,6 +456,7 @@ function WeekView({
         </View>
       </View>
     </DraggableListGroup>
+    </View>
   );
 }
 
@@ -914,6 +918,9 @@ const s = StyleSheet.create({
   },
 
   // Month view
+  monthViewWrap: {
+    flex: 1,
+  },
   monthView: {
     borderTopWidth: 1,
     borderLeftWidth: 1,
@@ -1001,6 +1008,9 @@ const s = StyleSheet.create({
   },
 
   // Week view
+  weekViewWrap: {
+    flex: 1,
+  },
   weekContainer: {
     flex: 1,
   },
