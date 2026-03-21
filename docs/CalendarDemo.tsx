@@ -105,16 +105,26 @@ const SEED_EVENTS: CalEvent[] = [
 function EventBar({
   event,
   isDragging,
+  onPress,
 }: {
   event: CalEvent;
   isDragging: boolean;
+  onPress?: () => void;
 }) {
-  return (
+  const content = (
     <View style={[s.eventBar, { backgroundColor: event.color }, isDragging && s.eventBarDragging]}>
       <Text style={s.eventBarText} numberOfLines={1}>
         {event.time} {event.title}
       </Text>
     </View>
+  );
+
+  if (!onPress) return content;
+
+  return (
+    <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
+      {content}
+    </TouchableOpacity>
   );
 }
 
@@ -235,11 +245,13 @@ function MonthView({
   events,
   monthDate,
   onDrop,
+  onEditEvent,
   onAddForDate,
 }: {
   events: CalEvent[];
   monthDate: Date;
   onDrop: (event: DropEvent<CalEvent>) => void;
+  onEditEvent: (ev: CalEvent) => void;
   onAddForDate: (date: string) => void;
 }) {
   const year = monthDate.getFullYear();
@@ -300,9 +312,9 @@ function MonthView({
 
   const renderItem = useCallback(
     ({ item, isDragging }: { item: CalEvent; isDragging: boolean }) => (
-      <EventBar event={item} isDragging={isDragging} />
+      <EventBar event={item} isDragging={isDragging} onPress={() => onEditEvent(item)} />
     ),
-    []
+    [onEditEvent]
   );
 
   return (
@@ -380,11 +392,13 @@ function WeekView({
   events,
   weekDate,
   onDrop,
+  onEditEvent,
   onAddForDate,
 }: {
   events: CalEvent[];
   weekDate: Date;
   onDrop: (event: DropEvent<CalEvent>) => void;
+  onEditEvent: (ev: CalEvent) => void;
   onAddForDate: (date: string) => void;
 }) {
   const days = weekDays(weekDate);
@@ -392,9 +406,9 @@ function WeekView({
 
   const renderItem = useCallback(
     ({ item, isDragging }: { item: CalEvent; isDragging: boolean }) => (
-      <EventBar event={item} isDragging={isDragging} />
+      <EventBar event={item} isDragging={isDragging} onPress={() => onEditEvent(item)} />
     ),
-    []
+    [onEditEvent]
   );
 
   return (
@@ -693,6 +707,7 @@ export function CalendarDemo({ onBack }: { onBack: () => void }) {
             events={events}
             monthDate={navDate}
             onDrop={handleDrop}
+            onEditEvent={handleEditEvent}
             onAddForDate={openAdd}
           />
         )}
@@ -701,6 +716,7 @@ export function CalendarDemo({ onBack }: { onBack: () => void }) {
             events={events}
             weekDate={navDate}
             onDrop={handleDrop}
+            onEditEvent={handleEditEvent}
             onAddForDate={openAdd}
           />
         )}
@@ -712,18 +728,25 @@ export function CalendarDemo({ onBack }: { onBack: () => void }) {
           />
         )}
 
-        {/* ── Event form ─────────────────────────────────────────────────── */}
-        {formVisible && (
-          <EventForm
-            initial={editingEvent ?? undefined}
-            defaultDate={formDefaultDate}
-            mode={editingEvent ? 'edit' : 'add'}
-            onCancel={handleCancelForm}
-            onDelete={editingEvent ? handleDeleteEvent : undefined}
-            onSubmit={editingEvent ? handleSaveEdit : handleAddEvent}
-          />
-        )}
       </View>
+
+      {/* ── Modal overlay ──────────────────────────────────────────────── */}
+      {formVisible && (
+        <View style={s.modalOverlay}>
+          <TouchableOpacity style={s.modalBackdrop} onPress={handleCancelForm} activeOpacity={1} />
+          <View style={s.modalContent}>
+            <EventForm
+              key={editingEvent?.id ?? 'new'}
+              initial={editingEvent ?? undefined}
+              defaultDate={formDefaultDate}
+              mode={editingEvent ? 'edit' : 'add'}
+              onCancel={handleCancelForm}
+              onDelete={editingEvent ? handleDeleteEvent : undefined}
+              onSubmit={editingEvent ? handleSaveEdit : handleAddEvent}
+            />
+          </View>
+        </View>
+      )}
     </View>
   );
 }
@@ -1081,6 +1104,30 @@ const s = StyleSheet.create({
   },
 
   // Form
+  // Modal
+  modalOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 9999,
+  },
+  modalBackdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+  },
+  modalContent: {
+    width: '90%',
+    maxWidth: 420,
+    zIndex: 1,
+  },
   form: {
     marginTop: 20,
     marginHorizontal: 0,
