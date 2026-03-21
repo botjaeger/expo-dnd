@@ -5,9 +5,9 @@ import Animated, {
   useAnimatedStyle,
   useAnimatedReaction,
   useDerivedValue,
-  withTiming,
   runOnJS,
 } from 'react-native-reanimated';
+import { withTimingRM } from '../../utils/motion';
 import { clamp } from '../../utils/sortable';
 import { objectMove } from '../../utils/sortable';
 import { getIndexAtMidpoint } from '../../utils/heights';
@@ -72,7 +72,7 @@ function FixedSortableItemInner<T>({
       if (prevPos !== null && pos !== prevPos && !isActive.value) {
         // Item was shifted by another drag - animate to new position
         const targetOffset = currentPrefixSum.value[pos] - originalPrefixSum.value[originalIndex];
-        animatedOffset.value = withTiming(targetOffset, TIMING_CONFIG);
+        animatedOffset.value = withTimingRM(targetOffset, TIMING_CONFIG);
       }
     },
     [originalIndex]
@@ -83,7 +83,7 @@ function FixedSortableItemInner<T>({
     .onBegin(() => {
       'worklet';
       isPressing.value = true;
-      liftedAnimatedScale.value = withTiming(ACTIVE_SCALE, { duration: 100 });
+      liftedAnimatedScale.value = withTimingRM(ACTIVE_SCALE, { duration: 100 });
     })
     .onStart((event) => {
       'worklet';
@@ -95,7 +95,7 @@ function FixedSortableItemInner<T>({
       startPosition.value = currentPos;
       dragEndFired.value = false;
 
-      liftedAnimatedScale.value = withTiming(ACTIVE_SCALE, SCALE_CONFIG);
+      liftedAnimatedScale.value = withTimingRM(ACTIVE_SCALE, SCALE_CONFIG);
       liftedIsActive.value = true;
 
       const currentOffset = currentPrefixSum.value[currentPos] - originalPrefixSum.value[originalIndex];
@@ -148,7 +148,7 @@ function FixedSortableItemInner<T>({
       activeId.value = null;
 
       // Animate scale back to normal
-      liftedAnimatedScale.value = withTiming(1, SCALE_CONFIG);
+      liftedAnimatedScale.value = withTimingRM(1, SCALE_CONFIG);
 
       // Calculate current visual offset (clamped)
       const rawOffset = initialItemOffset.value + gestureTranslation.value;
@@ -163,7 +163,7 @@ function FixedSortableItemInner<T>({
 
       // Animate from current position to final position, then hide overlay and notify
       animatedOffset.value = currentOffset;
-      animatedOffset.value = withTiming(finalOffset, TIMING_CONFIG, () => {
+      animatedOffset.value = withTimingRM(finalOffset, TIMING_CONFIG, () => {
         'worklet';
         liftedIsActive.value = false;
         runOnJS(onDeactivate)();
@@ -185,7 +185,7 @@ function FixedSortableItemInner<T>({
         activeId.value = null;
 
         // Animate scale back to normal
-        liftedAnimatedScale.value = withTiming(1, SCALE_CONFIG);
+        liftedAnimatedScale.value = withTimingRM(1, SCALE_CONFIG);
 
         // Calculate current visual offset (clamped)
         const rawOffset = initialItemOffset.value + gestureTranslation.value;
@@ -199,7 +199,7 @@ function FixedSortableItemInner<T>({
 
         // Animate from current position to target, then hide overlay
         animatedOffset.value = currentOffset;
-        animatedOffset.value = withTiming(targetOffset, TIMING_CONFIG, () => {
+        animatedOffset.value = withTimingRM(targetOffset, TIMING_CONFIG, () => {
           'worklet';
           liftedIsActive.value = false;
           runOnJS(onDeactivate)();
@@ -207,7 +207,7 @@ function FixedSortableItemInner<T>({
       } else if (!success) {
         // Touch ended before drag activated — reset press feedback
         isPressing.value = false;
-        liftedAnimatedScale.value = withTiming(1, { duration: 100 });
+        liftedAnimatedScale.value = withTimingRM(1, { duration: 100 });
       }
     });
 

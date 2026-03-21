@@ -45,9 +45,12 @@ const C = {
   surface: '#141414',
   border: '#262626',
   text: '#fafafa',
+  textInverse: '#ffffff',
   muted: '#a1a1aa',
-  dim: '#525252',
+  dim: '#6b6b6b',
   accent: '#3b82f6',
+  accentBg: 'rgba(59, 130, 246, 0.06)',
+  accentBgHover: 'rgba(59, 130, 246, 0.1)',
   teal: '#14b8a6',
   purple: '#8b5cf6',
   green: '#22c55e',
@@ -481,7 +484,7 @@ function CodeTabs({ tabs }: { tabs: Record<Tab, readonly CodeLine[]> }) {
           </TouchableOpacity>
         ))}
         <View style={{ flex: 1 }} />
-        <TouchableOpacity style={cs.copyBtn} onPress={handleCopy} activeOpacity={0.7}>
+        <TouchableOpacity style={cs.copyBtn} onPress={handleCopy} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="Copy code">
           <Text style={[cs.copyBtnText, copied && { color: C.green }]}>{copied ? '✓ Copied' : '⎘ Copy'}</Text>
         </TouchableOpacity>
       </View>
@@ -739,7 +742,7 @@ const INITIAL_DONE: TaskItem[] = [
 const activeContainerStyle = {
   borderWidth: 1,
   borderColor: C.accent,
-  backgroundColor: 'rgba(59, 130, 246, 0.06)',
+  backgroundColor: C.accentBg,
   borderRadius: 6,
 };
 
@@ -1160,6 +1163,8 @@ function CtaButton({ label, href, primary, onPress }: { label: string; href?: st
       style={[hs.ctaBtn, primary ? hs.ctaBtnPrimary : hs.ctaBtnSecondary]}
       onPress={onPress ?? (() => href && Linking.openURL(href))}
       activeOpacity={0.75}
+      accessibilityRole={href ? 'link' : 'button'}
+      accessibilityLabel={label}
     >
       <Text style={[hs.ctaBtnText, primary ? hs.ctaBtnTextPrimary : hs.ctaBtnTextSecondary]}>
         {label}
@@ -1198,6 +1203,8 @@ function Nav({ isNarrow, ctx, onKanban }: { isNarrow: boolean; ctx: ScrollCtx; o
               style={ns.hamburger}
               onPress={() => setMenuOpen((v) => !v)}
               activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel="Toggle menu"
             >
               <View style={ns.hamburgerLine} />
               <View style={ns.hamburgerLine} />
@@ -1205,8 +1212,8 @@ function Nav({ isNarrow, ctx, onKanban }: { isNarrow: boolean; ctx: ScrollCtx; o
             </TouchableOpacity>
             {menuOpen && (
               <View style={ns.mobileMenu}>
-                <TouchableOpacity onPress={goExamples}><Text style={ns.navLink}>Examples</Text></TouchableOpacity>
-                <TouchableOpacity onPress={goApi}><Text style={ns.navLink}>API</Text></TouchableOpacity>
+                <TouchableOpacity style={ns.navLinkTouch} onPress={goExamples} accessibilityRole="link"><Text style={ns.navLink}>Examples</Text></TouchableOpacity>
+                <TouchableOpacity style={ns.navLinkTouch} onPress={goApi} accessibilityRole="link"><Text style={ns.navLink}>API</Text></TouchableOpacity>
                 <TouchableOpacity
                   style={ns.navBtnBorder}
                   onPress={() => Linking.openURL('https://github.com/botjaeger/expo-dnd')}
@@ -1226,9 +1233,9 @@ function Nav({ isNarrow, ctx, onKanban }: { isNarrow: boolean; ctx: ScrollCtx; o
           </>
         ) : (
           <View style={ns.navRight}>
-            <TouchableOpacity onPress={goExamples}><Text style={ns.navLink}>Examples</Text></TouchableOpacity>
-            <TouchableOpacity onPress={goApi}><Text style={ns.navLink}>API</Text></TouchableOpacity>
-            <TouchableOpacity onPress={goKanban}><Text style={[ns.navLink, ns.navLinkAccent]}>Kanban</Text></TouchableOpacity>
+            <TouchableOpacity style={ns.navLinkTouch} onPress={goExamples} accessibilityRole="link"><Text style={ns.navLink}>Examples</Text></TouchableOpacity>
+            <TouchableOpacity style={ns.navLinkTouch} onPress={goApi} accessibilityRole="link"><Text style={ns.navLink}>API</Text></TouchableOpacity>
+            <TouchableOpacity style={ns.navLinkTouch} onPress={goKanban} accessibilityRole="link"><Text style={[ns.navLink, ns.navLinkAccent]}>Kanban</Text></TouchableOpacity>
             <TouchableOpacity
               style={ns.navBtnBorder}
               onPress={() => Linking.openURL('https://github.com/botjaeger/expo-dnd')}
@@ -1286,6 +1293,7 @@ function ApiSidebar({ ctx, activeItem, onSelect }: { ctx: ScrollCtx; activeItem:
 export default function App() {
   const { width } = useWindowDimensions();
   const isNarrow = width < 768;
+  const isMedium = width >= 768 && width < 1024;
   const [page, setPage] = useState<'docs' | 'kanban' | 'settings' | 'calendar'>('docs');
 
   const scrollRef = useRef<ScrollView>(null);
@@ -1371,14 +1379,14 @@ export default function App() {
       <ScrollView
         ref={scrollRef}
         style={gs.scroll}
-        contentContainerStyle={[gs.content, isNarrow && gs.contentNarrow]}
+        contentContainerStyle={[gs.content, isMedium && gs.contentMedium, isNarrow && gs.contentNarrow]}
       >
         <View style={gs.navSpacer} />
 
         {/* ── Hero ────────────────────────────────── */}
-        <View style={hs.hero}>
+        <View style={[hs.hero, isMedium && hs.heroMedium]}>
           <Text style={hs.heroLabel}>expo-dnd</Text>
-          <Text style={[hs.heroTitle, isNarrow && hs.heroTitleNarrow]}>
+          <Text style={[hs.heroTitle, isMedium && hs.heroTitleMedium, isNarrow && hs.heroTitleNarrow]}>
             {'Drag\u00A0& drop powered by UI\u2011thread animations.'}
           </Text>
           <Text style={hs.heroPlatforms}>{'iOS \u00B7 Android \u00B7 Web'}</Text>
@@ -1439,7 +1447,7 @@ export default function App() {
           </View>
 
           <View style={hs.qrBlock}>
-            <Image source={require('./assets/expo-go-qr.png')} style={hs.qrImage} />
+            <Image source={require('./assets/expo-go-qr.png')} style={hs.qrImage} accessibilityLabel="QR code to open expo-dnd example app in Expo Go" />
             <View style={hs.qrInfo}>
               <Text style={hs.qrTitle}>Try on device</Text>
               <Text style={hs.qrDesc}>
@@ -1912,6 +1920,10 @@ const ns = StyleSheet.create({
     color: C.accent,
     fontWeight: '600',
   },
+  navLinkTouch: {
+    minHeight: 44,
+    justifyContent: 'center',
+  },
   navBtnBorder: {
     borderWidth: 1,
     borderColor: C.border,
@@ -1919,6 +1931,8 @@ const ns = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     marginLeft: 4,
+    minHeight: 44,
+    justifyContent: 'center',
   },
   navBtnBorderText: {
     fontFamily: 'monospace',
@@ -1933,6 +1947,8 @@ const ns = StyleSheet.create({
     borderRadius: 5,
     paddingHorizontal: 12,
     paddingVertical: 6,
+    minHeight: 44,
+    justifyContent: 'center',
   },
   navBtnFillText: {
     fontFamily: 'monospace',
@@ -1980,6 +1996,7 @@ const gs = StyleSheet.create({
     alignSelf: 'center',
     width: '100%',
   },
+  contentMedium: { paddingHorizontal: 32 },
   contentNarrow: { paddingHorizontal: 20 },
   // Spacer so content clears the fixed nav on web; on native the nav is in-flow
   navSpacer: {
@@ -2093,6 +2110,8 @@ const hs = StyleSheet.create({
     marginBottom: 16,
     letterSpacing: -0.5,
   },
+  heroMedium: { paddingTop: 72, paddingBottom: 56 },
+  heroTitleMedium: { fontSize: 40, lineHeight: 48 },
   heroTitleNarrow: { fontSize: 32, lineHeight: 40 },
   heroPlatforms: {
     fontSize: 15,
@@ -2198,7 +2217,7 @@ const hs = StyleSheet.create({
   ctaBtnPrimary: { backgroundColor: C.accent },
   ctaBtnSecondary: { backgroundColor: C.surface, borderWidth: 1, borderColor: C.border },
   ctaBtnText: { fontSize: 14, fontWeight: '600' },
-  ctaBtnTextPrimary: { color: '#ffffff' },
+  ctaBtnTextPrimary: { color: C.textInverse },
   ctaBtnTextSecondary: { color: C.text },
   tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   tag: {
@@ -2234,6 +2253,8 @@ const cs = StyleSheet.create({
     paddingVertical: 10,
     borderBottomWidth: 2,
     borderBottomColor: 'transparent',
+    minHeight: 44,
+    justifyContent: 'center',
   },
   tabBtnActive: { borderBottomColor: C.accent },
   tabBtnText: {
@@ -2247,6 +2268,8 @@ const cs = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
     alignSelf: 'center',
+    minHeight: 44,
+    justifyContent: 'center',
   },
   copyBtnText: {
     fontFamily: 'monospace',
@@ -2378,7 +2401,7 @@ const cs = StyleSheet.create({
   demo1ZoneActive: {
     borderWidth: 1,
     borderColor: C.accent,
-    backgroundColor: 'rgba(59, 130, 246, 0.06)',
+    backgroundColor: C.accentBg,
   },
   demo1ZoneLabel: {
     fontFamily: 'monospace',
@@ -2424,6 +2447,8 @@ const cs = StyleSheet.create({
     borderRadius: 4,
     borderWidth: 1,
     borderColor: C.border,
+    minHeight: 44,
+    justifyContent: 'center',
   },
   resetBtnText: {
     fontFamily: 'monospace',
@@ -2645,10 +2670,12 @@ const cs = StyleSheet.create({
     borderWidth: 1,
     borderColor: C.border,
     backgroundColor: C.bg,
+    minHeight: 44,
+    justifyContent: 'center',
   },
   effectBtnActive: {
     borderColor: C.accent,
-    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+    backgroundColor: C.accentBgHover,
   },
   effectBtnText: {
     fontFamily: 'monospace',
@@ -2699,6 +2726,8 @@ const ss = StyleSheet.create({
     paddingHorizontal: 12,
     borderLeftWidth: 2,
     borderLeftColor: 'transparent',
+    minHeight: 44,
+    justifyContent: 'center',
   },
   sidebarItemActive: {
     borderLeftColor: C.accent,
