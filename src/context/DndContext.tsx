@@ -153,6 +153,7 @@ interface DndContextProviderProps {
   onDragOver?: DndContextValue['onDragOver'];
   onDragEnd?: DndContextValue['onDragEnd'];
   dragEffect?: DragEffect | DragEffectConfig;
+  style?: import('react-native').StyleProp<import('react-native').ViewStyle>;
 }
 
 export function DndContextProvider({
@@ -162,6 +163,7 @@ export function DndContextProvider({
   onDragOver,
   onDragEnd,
   dragEffect: dragEffectProp,
+  style,
 }: DndContextProviderProps) {
   const dragEffect = dragEffectProp ? resolveDragEffect(dragEffectProp) : undefined;
 
@@ -411,7 +413,7 @@ export function DndContextProvider({
 
   return (
     <DndContext.Provider value={contextValue}>
-      <Animated.View ref={containerRef as any} style={contextStyles.container} collapsable={false}>
+      <Animated.View ref={containerRef as any} style={[contextStyles.container, style]} collapsable={false}>
         {children}
         {/* Only render the overlay inline when no portal is wrapping this provider */}
         {!portal && (

@@ -41,6 +41,8 @@ export interface AutoSortableProps<T> {
   renderInsertIndicator?: (index: number) => React.ReactNode;
   /** Animation effect applied to the drag overlay when picked up */
   dragEffect?: import('../animations/dragEffects').DragEffect | import('../animations/dragEffects').DragEffectConfig;
+  /** Long press duration in ms before drag activates (default: 200) */
+  longPressDuration?: number;
 }
 
 // ============ AutoSortable ============

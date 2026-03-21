@@ -86,6 +86,8 @@ export interface DraggableListProps<T> {
   /** Animation effect applied to the drag overlay for items in this list.
    *  Overrides the DndProvider-level dragEffect set on DraggableListGroup. */
   dragEffect?: import('../animations/dragEffects').DragEffect | import('../animations/dragEffects').DragEffectConfig;
+  /** Long press duration in ms before drag activates (default: 200) */
+  longPressDuration?: number;
 }
 
 export interface DraggableListGroupProps<T> {
@@ -94,6 +96,8 @@ export interface DraggableListGroupProps<T> {
   onDrop: (event: DropEvent<T>) => void;
   /** Animation effect applied to the drag overlay when picked up */
   dragEffect?: import('../animations/dragEffects').DragEffect | import('../animations/dragEffects').DragEffectConfig;
+  /** Long press duration in ms before drag activates (default: 200) */
+  longPressDuration?: number;
 }
 
 interface DraggableListItemRendererProps<T> {
@@ -510,6 +514,7 @@ interface DraggableListItemProps<T> {
   activeDragStyle?: ViewStyle;
   dragEffect?: import('../animations/dragEffects').DragEffectConfig;
   renderItem: (info: DraggableListItemInfo<T>) => React.ReactNode;
+  longPressDuration?: number;
 }
 
 function DraggableListItemInner<T>({
@@ -526,6 +531,7 @@ function DraggableListItemInner<T>({
   activeDragStyle,
   dragEffect,
   renderItem,
+  longPressDuration,
 }: DraggableListItemProps<T>) {
   const context = useDraggableListContext<T>();
   const isHorizontal = direction === 'horizontal';
@@ -624,6 +630,7 @@ function DraggableListItemInner<T>({
         handle={handle}
         _skipDragStyle
         dragEffect={dragEffect}
+        longPressDuration={longPressDuration}
       >
         <View style={sizeStyle}>
           <DraggableListItemRenderer
@@ -723,6 +730,7 @@ export function DraggableList<T>({
   activeDragStyle,
   renderInsertIndicator,
   dragEffect: dragEffectProp,
+  longPressDuration,
 }: DraggableListProps<T>) {
   const resolvedDragEffect: DragEffectConfig | undefined = dragEffectProp
     ? resolveDragEffect(dragEffectProp)
@@ -948,6 +956,7 @@ export function DraggableList<T>({
       activeDragStyle={activeDragStyle}
       dragEffect={resolvedDragEffect}
       renderItem={renderItem}
+      longPressDuration={longPressDuration}
     />
   ));
 

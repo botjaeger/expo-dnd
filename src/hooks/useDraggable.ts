@@ -25,6 +25,8 @@ export interface UseDraggableProps {
   /** Style applied to the source element while dragging.
    *  Defaults to { opacity: 0.4 }. */
   activeDragStyle?: ViewStyle;
+  /** Long press duration in ms before drag activates (default: 200) */
+  longPressDuration?: number;
 }
 
 export interface UseDraggableReturn {
@@ -44,7 +46,7 @@ export interface UseDraggableReturn {
  * Hook that makes an element draggable
  */
 export function useDraggable(props: UseDraggableProps): UseDraggableReturn {
-  const { id, data, disabled = false, activeDragStyle } = props;
+  const { id, data, disabled = false, activeDragStyle, longPressDuration } = props;
   const context = useDndContext();
   const { ref, rect, handleLayout, triggerMeasure } = useLayoutMeasurement();
   const prevOverIdRef = useRef<string | null>(null);
@@ -257,7 +259,7 @@ export function useDraggable(props: UseDraggableProps): UseDraggableReturn {
   // Set up pan gesture - each draggable has its own gesture
   const gesture = Gesture.Pan()
     .enabled(!disabled)
-    .activateAfterLongPress(200)
+    .activateAfterLongPress(longPressDuration ?? 200)
     .mouseButton(1) // LEFT mouse button for web
     .onStart((event) => {
       'worklet';

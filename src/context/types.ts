@@ -177,4 +177,6 @@ export interface DndProviderProps {
   onDragEnd?: (event: DragEndEvent) => void;
   /** Animation effect applied to the drag overlay when picked up */
   dragEffect?: DragEffect | DragEffectConfig;
+  /** Custom style for the provider container */
+  style?: import('react-native').StyleProp<import('react-native').ViewStyle>;
 }
