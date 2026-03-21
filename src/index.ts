@@ -51,3 +51,4 @@ export {
   getTotalSize,
   computeCurrentPrefixSum,
 } from './utils/heights';
+export { setReducedMotion, isReducedMotion } from './utils/motion';

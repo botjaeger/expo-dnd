@@ -5,11 +5,11 @@ import {
   useAnimatedReaction,
   useDerivedValue,
   useSharedValue,
-  withSpring,
   type AnimatedRef,
   type AnimatedStyle,
   type SharedValue,
 } from 'react-native-reanimated';
+import { withSpringRM } from '../utils/motion';
 import type { ViewStyle } from 'react-native';
 import { useDndContext } from '../context/useDndContext';
 import { useLayoutMeasurement } from './useLayoutMeasurement';
@@ -77,8 +77,8 @@ export function useDroppable(props: UseDroppableProps): UseDroppableReturn {
     (hovering, prev) => {
       if (hovering !== prev && resolvedEffect) {
         dropScale.value = hovering
-          ? withSpring(resolvedEffect.scale, resolvedEffect.spring)
-          : withSpring(1, resolvedEffect.spring);
+          ? withSpringRM(resolvedEffect.scale, resolvedEffect.spring)
+          : withSpringRM(1, resolvedEffect.spring);
       }
     }
   );
