@@ -1175,7 +1175,18 @@ function Nav({ isNarrow, ctx }: { isNarrow: boolean; ctx: ScrollCtx }) {
   return (
     <View style={ns.nav}>
       <View style={ns.navInner}>
-        <Text style={ns.logo}>expo-dnd</Text>
+        <View style={ns.logoRow}>
+          <Text style={ns.logo}>expo-dnd</Text>
+          <TouchableOpacity
+            onPress={() => Linking.openURL('https://github.com/botjaeger/expo-dnd')}
+            activeOpacity={0.7}
+          >
+            <Image
+              source={{ uri: 'https://img.shields.io/github/stars/botjaeger/expo-dnd?style=flat&color=3b82f6&labelColor=141414' }}
+              style={ns.starBadge}
+            />
+          </TouchableOpacity>
+        </View>
 
         {isNarrow ? (
           <>
@@ -1335,14 +1346,28 @@ export default function App() {
         <View style={hs.hero}>
           <Text style={hs.heroLabel}>expo-dnd</Text>
           <Text style={[hs.heroTitle, isNarrow && hs.heroTitleNarrow]}>
-            {'Cross-platform drag\u00A0& drop for React Native.'}
+            {'Drag\u00A0& drop powered by UI\u2011thread animations.'}
           </Text>
           <Text style={hs.heroPlatforms}>{'iOS \u00B7 Android \u00B7 Web'}</Text>
-          <Text style={hs.heroDesc}>
-            Built on Reanimated{'\u00A0'}3 and Gesture Handler{'\u00A0'}2. Sortable lists,
-            cross-list transfers, collision detection, and smooth animations{'\u00A0'}
-            {'\u2014'} all running at 60{'\u00A0'}fps on the UI thread.
-          </Text>
+
+          <View style={hs.whyList}>
+            <Text style={hs.whyItem}>
+              <Text style={hs.whyBullet}>{'\u25B8 '}</Text>
+              Gestures and animations on the <Text style={hs.whyBold}>UI thread</Text> via Reanimated worklets {'\u2014'} no JS bridge during drag
+            </Text>
+            <Text style={hs.whyItem}>
+              <Text style={hs.whyBullet}>{'\u25B8 '}</Text>
+              <Text style={hs.whyBold}>Auto-measuring</Text> sortable lists {'\u2014'} variable heights work without configuration
+            </Text>
+            <Text style={hs.whyItem}>
+              <Text style={hs.whyBullet}>{'\u25B8 '}</Text>
+              <Text style={hs.whyBold}>Cross-list transfers</Text>, collision detection, auto-scroll, drag handles, and custom hooks
+            </Text>
+            <Text style={hs.whyItem}>
+              <Text style={hs.whyBullet}>{'\u25B8 '}</Text>
+              Works with <Text style={hs.whyBold}>Expo</Text> and bare React Native {'\u2014'} Fabric and New Architecture supported
+            </Text>
+          </View>
 
           <View style={hs.installBlock}>
             <Text style={hs.installText}>
@@ -1413,8 +1438,8 @@ export default function App() {
 
         <DemoBlock
           num="01"
-          title="Basic Drag & Drop"
-          desc="Long-press to pick up, drag onto a drop zone. onDragEnd fires with the source and target IDs. Item animates back if released outside all zones."
+          title="Drag & Drop"
+          desc="Long-press to pick up, drag onto a zone. Collision detection uses center-point check with intersection ratio fallback. Items spring back if released outside all zones."
           panel={<Demo1Panel />}
           tabs={{ Setup: BASIC_SETUP, Callbacks: BASIC_CALLBACKS, Full: BASIC_FULL }}
           isNarrow={isNarrow}
@@ -1422,8 +1447,8 @@ export default function App() {
 
         <DemoBlock
           num="02"
-          title="Sortable List"
-          desc="Long-press to pick up, drag to reorder. Items animate smoothly into position. No itemSize needed — sizes are auto-measured after render."
+          title="Reorder List"
+          desc="Long-press to reorder. Positions animate on the UI thread via shared values. No itemSize needed — heights are auto-measured after render."
           panel={<Demo2Panel />}
           tabs={{ Setup: SORT_SETUP, Callbacks: SORT_CALLBACKS, Full: SORT_FULL }}
           isNarrow={isNarrow}
@@ -1431,8 +1456,8 @@ export default function App() {
 
         <DemoBlock
           num="03"
-          title="Cross-List Transfer"
-          desc="Drag items between independent lists. DraggableListGroup coordinates the transfer and fires onDrop with source and target info."
+          title="Move Between Lists"
+          desc="Drag items between independent lists. DraggableListGroup coordinates source/target tracking, insertion indices, and auto-scroll across lists."
           panel={<Demo3Panel isNarrow={isNarrow} />}
           tabs={{ Setup: XLIST_SETUP, Callbacks: XLIST_CALLBACKS, Full: XLIST_FULL }}
           isNarrow={isNarrow}
@@ -1440,8 +1465,8 @@ export default function App() {
 
         <DemoBlock
           num="04"
-          title="Variable Heights"
-          desc="Items with different heights — no itemSize needed. SortableList auto-measures each item after render and handles mixed sizes seamlessly."
+          title="Mixed Heights"
+          desc="Each item is measured via onLayout after first render. Prefix sums track positions for O(log n) index lookup during drag. No manual sizing."
           panel={<Demo4Panel />}
           tabs={{ Setup: VARH_SETUP, Callbacks: VARH_CALLBACKS, Full: VARH_FULL }}
           isNarrow={isNarrow}
@@ -1449,8 +1474,8 @@ export default function App() {
 
         <DemoBlock
           num="05"
-          title="Custom Hooks"
-          desc="Build your own drag-and-drop from scratch using useDraggable, useDroppable, and useDndContext. Full control over rendering, gestures, and state."
+          title="Build Your Own"
+          desc="useDraggable, useDroppable, and useDndContext give you the gesture, collision, and overlay primitives. You control the rendering."
           panel={<Demo5Panel />}
           tabs={{ Setup: HOOKS_SETUP, Callbacks: HOOKS_CALLBACKS, Full: HOOKS_FULL }}
           isNarrow={isNarrow}
@@ -1754,12 +1779,21 @@ const ns = StyleSheet.create({
     alignSelf: 'center',
     width: '100%',
   },
+  logoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
   logo: {
     fontFamily: 'monospace',
     fontSize: 14,
     fontWeight: '700',
     color: C.text,
     letterSpacing: 0.5,
+  },
+  starBadge: {
+    width: 70,
+    height: 20,
   },
   navRight: {
     flexDirection: 'row',
@@ -1905,6 +1939,24 @@ const hs = StyleSheet.create({
     lineHeight: 26,
     marginBottom: 36,
     maxWidth: 520,
+  },
+  whyList: {
+    marginBottom: 36,
+    maxWidth: 580,
+    gap: 10,
+  },
+  whyItem: {
+    fontFamily: 'monospace',
+    fontSize: 13,
+    color: C.muted,
+    lineHeight: 20,
+  },
+  whyBullet: {
+    color: C.accent,
+  },
+  whyBold: {
+    color: C.text,
+    fontWeight: '600',
   },
   installBlock: {
     backgroundColor: C.surface,
