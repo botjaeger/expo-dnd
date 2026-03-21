@@ -168,6 +168,7 @@ React Native developers building iOS, Android, and Web apps who need drag-and-dr
 ```
 Dark mode:  bg #0a0a0a, surface #141414, border #262626, text #fafafa/#a1a1aa, accent #3b82f6
 Light mode: bg #fafafa, surface #ffffff, border #e5e5e5, text #0a0a0a/#71717a, accent #3b82f6
+Semantic:   textInverse #ffffff, dim #6b6b6b, accentBg rgba(59,130,246,0.06), accentBgHover rgba(59,130,246,0.1)
 Accents:    purple #8b5cf6, teal #14b8a6, orange #f97316, green #22c55e, red #ef4444
 ```
 
