@@ -161,7 +161,7 @@ function EventForm({
       time: time.trim() || '9:00am',
       title: title.trim(),
     });
-  }, [initial, color, title, date, time, onSubmit]);
+  }, [initial, color, title, desc, date, time, onSubmit]);
 
   return (
     <View style={s.form}>
