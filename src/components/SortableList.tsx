@@ -13,7 +13,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { objectMove, clamp } from '../utils/sortable';
 import { resolveDragEffect, type DragEffectConfig } from '../animations/dragEffects';
-import { getIndexAtMidpoint } from '../utils/heights';
+import { getIndexAtMidpoint, getInsertionIndexAtPosition } from '../utils/heights';
 import { DraggableItemContext } from './Draggable';
 import { useContext } from 'react';
 import { DndContext } from '../context/DndContext';
@@ -47,6 +47,9 @@ interface SortableListProps<T> {
   activeDragStyle?: import('react-native').ViewStyle;
   renderInsertIndicator?: (index: number) => React.ReactNode;
   dragEffect?: import('../animations/dragEffects').DragEffect | import('../animations/dragEffects').DragEffectConfig;
+  /** Called when an external Draggable is dropped onto this list.
+   *  Only fires when SortableList is inside a DndProvider. */
+  onExternalDrop?: (event: { activeId: string; data?: unknown; insertIndex: number }) => void;
 }
 
 // ============ SortableItem (unified for fixed + scroll) ============
@@ -478,6 +481,7 @@ export function SortableList<T>({
   onDragStart: onDragStartProp,
   onDragMove: onDragMoveProp,
   onDragEnd: onDragEndProp,
+  onExternalDrop,
 }: SortableListProps<T>) {
   const dragEffectConfig = dragEffectProp ? resolveDragEffect(dragEffectProp) : undefined;
   const scrollViewRef = useAnimatedRef<Animated.ScrollView>();
@@ -556,6 +560,79 @@ export function SortableList<T>({
       });
     }
   }, [handleContainerLayout, dndCtx, containerRef, containerDroppableRect]);
+
+  // Detect external Draggable drops onto this SortableList.
+  // Watches DndContext: when isDragging transitions true→false and overId was our container,
+  // compute insertion index and fire onExternalDrop.
+  const handleExternalDropJS = useCallback((activeItemId: string, absX: number, absY: number) => {
+    if (!onExternalDrop || !dndCtx) return;
+
+    // Look up the active item's data from the draggable registry
+    const draggable = dndCtx.draggables.get(activeItemId);
+    const itemData = draggable?.data;
+
+    // Compute insertion index from pointer position relative to container
+    const rect = containerDroppableRect.value;
+    if (!rect) { onExternalDrop({ activeId: activeItemId, data: itemData, insertIndex: data.length }); return; }
+
+    const relativePos = isHorizontal
+      ? (absX - rect.x)
+      : (absY - rect.y);
+
+    const insertIndex = getInsertionIndexAtPosition(
+      originalPrefixSumSV.value,
+      relativePos,
+      data.length,
+      gap
+    );
+
+    onExternalDrop({ activeId: activeItemId, data: itemData, insertIndex });
+  }, [onExternalDrop, dndCtx, containerDroppableRect, isHorizontal, originalPrefixSumSV, data.length, gap]);
+
+  // Track the last overId/activeId before drag ends (they reset on drop).
+  // These reactions are always called (hooks rules) but no-op without DndContext.
+  const lastOverId = useSharedValue<string | null>(null);
+  const lastActiveId = useSharedValue<string | null>(null);
+  const lastAbsX = useSharedValue(0);
+  const lastAbsY = useSharedValue(0);
+  const hasExternalDrop = !!dndCtx && !!onExternalDrop;
+
+  useAnimatedReaction(
+    () => {
+      if (!hasExternalDrop || !dndCtx) return null;
+      return {
+        over: dndCtx.overId.value,
+        active: dndCtx.activeId.value,
+        absX: dndCtx.absoluteX.value,
+        absY: dndCtx.absoluteY.value,
+      };
+    },
+    (state) => {
+      if (!state) return;
+      if (state.over) lastOverId.value = state.over;
+      if (state.active) lastActiveId.value = state.active;
+      lastAbsX.value = state.absX;
+      lastAbsY.value = state.absY;
+    }
+  );
+
+  useAnimatedReaction(
+    () => hasExternalDrop && dndCtx ? dndCtx.isDragging.value : false,
+    (dragging, prevDragging) => {
+      if (!hasExternalDrop) return;
+      if (prevDragging && !dragging) {
+        const wasOverUs = lastOverId.value === containerDroppableId;
+        const wasOurItem = lastActiveId.value ? (positions.value[lastActiveId.value] !== undefined) : false;
+
+        if (wasOverUs && !wasOurItem && lastActiveId.value) {
+          runOnJS(handleExternalDropJS)(lastActiveId.value, lastAbsX.value, lastAbsY.value);
+        }
+
+        lastOverId.value = null;
+        lastActiveId.value = null;
+      }
+    }
+  );
 
   // Render items
   const items = data.map((item, index) => (

@@ -41,6 +41,9 @@ export interface AutoSortableProps<T> {
   renderInsertIndicator?: (index: number) => React.ReactNode;
   /** Animation effect applied to the drag overlay when picked up */
   dragEffect?: import('../animations/dragEffects').DragEffect | import('../animations/dragEffects').DragEffectConfig;
+  /** Called when an external Draggable is dropped onto this list.
+   *  Only fires when SortableList is inside a DndProvider. */
+  onExternalDrop?: (event: { activeId: string; data?: unknown; insertIndex: number }) => void;
 }
 
 // ============ AutoSortable ============
