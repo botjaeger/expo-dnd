@@ -324,9 +324,7 @@ function MonthView({
             {row.map((cell, ci) => {
               if (!cell) return <View key={ci} style={s.monthCell} />;
               const ymd = `${cell.year}-${String(cell.month + 1).padStart(2, '0')}-${String(cell.day).padStart(2, '0')}`;
-              const dayEvs = (eventsByDate[ymd] ?? []).sort((a, b) =>
-                a.time.localeCompare(b.time)
-              );
+              const dayEvs = eventsByDate[ymd] ?? [];
               const isToday = ymd === today;
               const isCurrent = cell.isCurrent;
 
@@ -427,9 +425,7 @@ function WeekView({
         <View style={[s.weekColsRow, { flex: 1 }]}>
           {days.map((day, _i) => {
             const ymd = toYMD(day);
-            const dayEvs = events
-              .filter((e) => e.date === ymd)
-              .sort((a, b) => a.time.localeCompare(b.time));
+            const dayEvs = events.filter((e) => e.date === ymd);
             return (
               <View key={ymd} style={s.weekCol}>
                 <AutoDraggableList<CalEvent>
@@ -471,7 +467,7 @@ function DayView({
   onAddForDate: (date: string) => void;
 }) {
   const ymd = toYMD(dayDate);
-  const dayEvents = events.filter((e) => e.date === ymd).sort((a, b) => a.time.localeCompare(b.time));
+  const dayEvents = events.filter((e) => e.date === ymd);
 
   // Time slots from 8am to 8pm
   const timeSlots = Array.from({ length: 13 }, (_, i) => {
@@ -595,11 +591,9 @@ export function CalendarDemo({ onBack }: { onBack: () => void }) {
   const handleDrop = useCallback((dropEvent: DropEvent<CalEvent>) => {
     const { item, fromListId, fromIndex, toListId, toIndex } = dropEvent;
     if (fromListId === toListId) {
-      // Same-day reorder
+      // Same-day reorder — preserve order of other days, splice within this day
       setEvents((prev) => {
-        const dayEvs = prev
-          .filter((e) => e.date === fromListId)
-          .sort((a, b) => a.time.localeCompare(b.time));
+        const dayEvs = prev.filter((e) => e.date === fromListId);
         const others = prev.filter((e) => e.date !== fromListId);
         const next = [...dayEvs];
         next.splice(fromIndex, 1);
