@@ -1460,7 +1460,6 @@ export default function App() {
             ['onDragOver',  '(event: DragOverEvent) => void', false, 'Called when the pointer enters or leaves a droppable'],
             ['onDragEnd',   '(event: DragEndEvent) => void', false, 'Called when the item is released'],
             ['dragEffect',  'DragEffect | DragEffectConfig', false, 'Scale effect: "pickup" | "scaleUp" | "scaleDown" | "bounce"'],
-            ['style',       'ViewStyle',                     false, 'Custom style for the provider container'],
           ]}
         />
         </View>
@@ -1479,8 +1478,6 @@ export default function App() {
             ['style',           'ViewStyle', false, 'Style applied to the wrapping Animated.View'],
             ['activeDragStyle', 'ViewStyle', false, 'Style applied to the source element while dragging. Default: { opacity: 0.4 }'],
             ['dragEffect',     'DragEffect | DragEffectConfig', false, 'Scale effect for this item\u2019s overlay. Overrides provider-level effect.'],
-            ['onPress',         '() => void', false, 'Called on tap/click (not after drag)'],
-            ['longPressDuration', 'number',   false, 'Milliseconds before drag activates (default: 200)'],
           ]}
         />
         </View>
@@ -1524,16 +1521,14 @@ export default function App() {
             ['onReorder',             '(data, event) => void',                     true,  'Called with reordered array and { fromIndex, toIndex, item }'],
             ['keyExtractor',          '(item) => string',                          true,  'Returns a unique key per item'],
             ['id',                    'string',                                    false, 'Zone identifier (default: "default"). Must be unique when using multiple lists.'],
-            ['direction',             '"horizontal" | "vertical"',                 false, 'Layout axis (default: "vertical")'],
+            ['direction',             '"horizontal" | "vertical"',                 false, 'Layout axis (default: "horizontal")'],
             ['containerSize',         'number',                                    false, 'Fixed size to enable scroll mode with auto-scroll'],
             ['autoScrollThreshold',   'number',                                    false, 'Pixels from edge that triggers auto-scroll (default: 80)'],
             ['handle',                'boolean',                                   false, 'Only DragHandle children can start drag'],
             ['activeDragStyle',       'ViewStyle',                                 false, 'Style for the source item while dragging'],
             ['renderInsertIndicator', '(index) => ReactNode',                      false, 'Render insertion indicator at target index'],
             ['dragEffect',            'DragEffect | DragEffectConfig',             false, 'Scale effect: "pickup" | "scaleUp" | "scaleDown" | "bounce"'],
-            ['onItemPress',           '(item, index) => void',                     false, 'Called on tap/click (not after drag)'],
             ['onExternalDrop',        '({ activeId, data, insertIndex }) => void', false, 'Called when an external Draggable or sortable item from another list is dropped here'],
-            ['longPressDuration',     'number',                                    false, 'Milliseconds before drag activates (default: 200)'],
             ['onDragStart',           '(id, index) => void',                       false, 'Called when drag begins'],
             ['onDragMove',            '(id, overIndex, position) => void',         false, 'Called during drag with position info'],
             ['onDragEnd',             '(id, fromIndex, toIndex) => void',          false, 'Called when drag ends'],
@@ -1554,7 +1549,7 @@ export default function App() {
             ['keyExtractor',          '(item) => string',                          true,  'Returns a unique key per item'],
             ['itemSize',              'number | (index) => number',                true,  'Item size along the drag axis (height or width)'],
             ['id',                    'string',                                    false, 'Zone identifier (default: "default")'],
-            ['direction',             '"horizontal" | "vertical"',                 false, 'Layout axis (default: "vertical")'],
+            ['direction',             '"horizontal" | "vertical"',                 false, 'Layout axis (default: "horizontal")'],
             ['containerSize',         'number',                                    false, 'Fixed size to enable scroll mode with auto-scroll'],
             ['autoScrollThreshold',   'number',                                    false, 'Pixels from edge that triggers auto-scroll (default: 80)'],
             ['handle',                'boolean',                                   false, 'Only DragHandle children can start drag'],
@@ -1618,8 +1613,6 @@ export default function App() {
             ['data',              'unknown',   false, 'Payload forwarded in drag events'],
             ['disabled',          'boolean',   false, 'Prevents dragging when true'],
             ['activeDragStyle',   'ViewStyle', false, 'Style for source element while dragging (default: { opacity: 0.4 })'],
-            ['onPress',           '() => void', false, 'Called on tap/click (not after drag)'],
-            ['longPressDuration', 'number',    false, 'Milliseconds before drag activates (default: 200)'],
           ]}
         />
         <ApiSection
