@@ -93,6 +93,12 @@ interface SortableItemProps<T> {
   externalInsertIndex: SharedValue<number>;
   /** Height of the external item being dragged (for shift offset) */
   externalItemHeight: SharedValue<number>;
+  /** This container's droppable ID in DndContext — used to suppress swap detection when item is over another container */
+  containerDroppableId?: string;
+  /** Container's cross-axis start position (screen coords) — for zero-lag pointer escape detection */
+  containerStartCross?: SharedValue<number>;
+  /** Container's cross-axis size — for zero-lag pointer escape detection */
+  containerCrossAxisSize?: SharedValue<number>;
 }
 
 function SortableItemInner<T>({
@@ -130,6 +136,9 @@ function SortableItemInner<T>({
   dndMeasureDroppables,
   externalInsertIndex,
   externalItemHeight,
+  containerDroppableId,
+  containerStartCross,
+  containerCrossAxisSize,
 }: SortableItemProps<T>) {
   const isActive = useSharedValue(false);
   const isPressing = useSharedValue(false);
@@ -140,6 +149,10 @@ function SortableItemInner<T>({
   const crossAxisTranslation = useSharedValue(0);
   const animatedPosition = useSharedValue(initialPixelPosition);
   const dragEndFired = useSharedValue(false);
+  /** Snapshot of positions at drag start — restored once when item crosses to another container */
+  const startPositions = useSharedValue<{ [id: string]: number }>({});
+  /** True after snapshot has been restored — prevents repeated assignments that trigger reactions */
+  const restoredToSnapshot = useSharedValue(false);
   const isHorizontal = direction === 'horizontal';
 
   const currentPosition = useDerivedValue(() => {
@@ -173,6 +186,18 @@ function SortableItemInner<T>({
     () => scrollOffset.value,
     (scroll, prevScroll) => {
       if (!isActive.value || prevScroll === null || !isScrollMode) return;
+
+      // Skip swaps when item has escaped this container (over another list or pointer left bounds).
+      // restoredToSnapshot is set by onUpdate's pointer escape check (zero-lag, no runOnJS delay).
+      const overOtherContainer = dndOverId && containerDroppableId
+        && dndOverId.value !== null && dndOverId.value !== containerDroppableId;
+      if (overOtherContainer || restoredToSnapshot.value) {
+        if (!restoredToSnapshot.value) {
+          restoredToSnapshot.value = true;
+          positions.value = startPositions.value;
+        }
+        return;
+      }
 
       const scrollChange = scroll - startScrollOffset.value;
       const rawContentPos = startPixelPos.value + gestureTranslation.value + scrollChange;
@@ -209,6 +234,8 @@ function SortableItemInner<T>({
       activeId.value = itemId;
       isDragging.value = true;
       startPositionIndex.value = currentPos;
+      startPositions.value = { ...positions.value };
+      restoredToSnapshot.value = false;
       startPixelPos.value = pixelPos;
       startScrollOffset.value = scrollOffset.value;
       gestureTranslation.value = 0;
@@ -244,10 +271,29 @@ function SortableItemInner<T>({
         dragContentPosition.value = clamp(rawContentPos, 0, totalSize - itemHeight);
       }
 
-      // Skip swap detection when item has left the container bounds (cross-list drag).
-      // Prevents source list positions from being corrupted while the item hovers
-      // over a different container.
-      if (rawContentPos >= 0 && rawContentPos <= totalSize) {
+      // Zero-lag pointer escape check: detect if the pointer has left this container's
+      // cross-axis bounds (e.g. dragged sideways to another list). This runs entirely on
+      // the UI thread — no runOnJS delay like dndOverId which lags by 1 frame.
+      let pointerEscaped = false;
+      if (containerStartCross && containerCrossAxisSize && containerCrossAxisSize.value > 0) {
+        const crossPointer = isHorizontal ? event.absoluteY : event.absoluteX;
+        pointerEscaped = crossPointer < containerStartCross.value
+          || crossPointer > containerStartCross.value + containerCrossAxisSize.value;
+      }
+
+      // Also check dndOverId (covers edge cases where pointer is in a gap between containers)
+      const overOtherContainer = dndOverId && containerDroppableId
+        && dndOverId.value !== null && dndOverId.value !== containerDroppableId;
+
+      if (pointerEscaped || overOtherContainer) {
+        // Restore positions to drag-start snapshot once, so source list items
+        // return to their original order without glitching.
+        if (!restoredToSnapshot.value) {
+          restoredToSnapshot.value = true;
+          positions.value = startPositions.value;
+        }
+      } else if (rawContentPos >= 0 && rawContentPos <= totalSize) {
+        restoredToSnapshot.value = false;
         const itemCenter = rawContentPos + itemHeight / 2;
         const newIndex = getIndexAtMidpoint(currentPrefixSum.value, itemCenter, itemCount, gap);
         const currentIndex = positions.value[itemId];
@@ -794,6 +840,9 @@ export function SortableList<T>({
       dndMeasureDroppables={dndCtx?.measureDroppables}
       externalInsertIndex={externalInsertIndex}
       externalItemHeight={externalItemHeight}
+      containerDroppableId={containerDroppableId}
+      containerStartCross={containerStartCross}
+      containerCrossAxisSize={containerCrossAxisSize}
     />
   ));
 
