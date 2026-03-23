@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.4.0](https://github.com/botjaeger/expo-dnd/compare/v0.3.3...v0.4.0) (2026-03-21)
+
+
+### Features
+
+* add tablet breakpoint for docs site ([#25](https://github.com/botjaeger/expo-dnd/issues/25)) ([e0aa580](https://github.com/botjaeger/expo-dnd/commit/e0aa5802d07ee66a9950038c839e29dd4ffecad0))
+* docs overhaul, complex examples, library improvements ([#26](https://github.com/botjaeger/expo-dnd/issues/26)) ([a92c70c](https://github.com/botjaeger/expo-dnd/commit/a92c70cfa40782e02db9ca514bc1fa35c9c6448b))
+
+
+### Bug Fixes
+
+* harden touch targets, accessibility, and reduced motion ([#23](https://github.com/botjaeger/expo-dnd/issues/23)) ([4d3903a](https://github.com/botjaeger/expo-dnd/commit/4d3903a9c541a4532c71900224fed99b983690d7))
+* normalize colors to design tokens ([#24](https://github.com/botjaeger/expo-dnd/issues/24)) ([4501aa9](https://github.com/botjaeger/expo-dnd/commit/4501aa91e19ce4cf1aab1bd30083dc3acfd25a44))
+
 ## [0.3.3](https://github.com/botjaeger/expo-dnd/compare/v0.3.2...v0.3.3) (2026-03-20)
 
 
